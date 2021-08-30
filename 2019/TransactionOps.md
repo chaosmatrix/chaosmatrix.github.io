@@ -2,6 +2,7 @@
 
 ## Rules
 1. Every Operation must has **RollBack Operation**
+2. All ops done success or no ops done
 
 ## Transaction Ops Rule
 1. Stages
