@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blogs on chaosmatrix</title>
+    <link>https://chaosmatrix.github.io/blog/</link>
+    <description>Recent content in Blogs on chaosmatrix</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Copyright chaosmatrix</copyright>
+    <lastBuildDate>Tue, 17 Dec 2019 20:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Transaction Ops</title>
+      <link>https://chaosmatrix.github.io/blog/transaction-ops/</link>
+      <pubDate>Tue, 17 Dec 2019 20:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/transaction-ops/</guid>
+      <description>Rules Every Operation must has RollBack Operation All ops done success or no ops done Transaction Ops Rule Stages Backup Stage backup current system state GoTo Next if Success Exit if it fails PreTest Stage in order to generate test rule make sure system working before apply operation GoTo Next if Success Exit if it fails Operate Stage do the operation that we want to do GoTo Next if Success GoTo RollBack Stage if it fails PostTest Stage apply custom-built test rule apply test rule generate in PreTest Stage GoTo RollBack Stage if it fails RollBack Stage only exec while Failed PostTest Stage apply Backup Stage to rollback system Use Transaction Ops Framework Example Update Network Route #!</description>
+    </item>
+    
+  </channel>
+</rss>
