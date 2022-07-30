@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Least_conn In Math - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="Least_conn In Math">
+<meta itemprop="description" content="Basic least_conn is a load balance algorithm, which distributed incoming request to the server with least connected connections.
+Think in math distribute requests to n server, least_conn try to archive a goal every server as busy as others.
+total time d that n servers finished requests:
+$$\begin{align*} & d = \sum_{i=1}^nd_i = n * d_{avg} \\ \\ & {d_i}\text{ : duration of } i^{th} \text{ server to finish the distributed requests} \\ & {d_{avg}}\text{ : avg duration that a server finished distribted requests} \\ \end{align*}$$ what least_conn algorithm want to archive is :"><meta itemprop="datePublished" content="2022-07-29T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-07-29T21:05:18+08:00" />
+<meta itemprop="wordCount" content="369">
+<meta itemprop="keywords" content="" /><meta property="og:title" content="Least_conn In Math" />
+<meta property="og:description" content="Basic least_conn is a load balance algorithm, which distributed incoming request to the server with least connected connections.
+Think in math distribute requests to n server, least_conn try to archive a goal every server as busy as others.
+total time d that n servers finished requests:
+$$\begin{align*} & d = \sum_{i=1}^nd_i = n * d_{avg} \\ \\ & {d_i}\text{ : duration of } i^{th} \text{ server to finish the distributed requests} \\ & {d_{avg}}\text{ : avg duration that a server finished distribted requests} \\ \end{align*}$$ what least_conn algorithm want to archive is :" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/least_conn_in_math/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-07-29T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-07-29T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Least_conn In Math"/>
+<meta name="twitter:description" content="Basic least_conn is a load balance algorithm, which distributed incoming request to the server with least connected connections.
+Think in math distribute requests to n server, least_conn try to archive a goal every server as busy as others.
+total time d that n servers finished requests:
+$$\begin{align*} & d = \sum_{i=1}^nd_i = n * d_{avg} \\ \\ & {d_i}\text{ : duration of } i^{th} \text{ server to finish the distributed requests} \\ & {d_{avg}}\text{ : avg duration that a server finished distribted requests} \\ \end{align*}$$ what least_conn algorithm want to archive is :"/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">29</span>
+							<span class="rest">Jul 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">Least_conn In Math</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  },
+  svg: {
+    fontCache: 'global'
+  }
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="/js/mathjax-v3-es5-tex-svg.js">
+</script>
+<h2 id="basic">Basic</h2>
+<p><strong>least_conn</strong> is a load balance algorithm, which distributed incoming request to the server with <strong>least connected connections</strong>.</p>
+<h2 id="think-in-math">Think in math</h2>
+<p>distribute requests to <strong>n</strong> server, least_conn try to archive a goal  <strong>every server as busy as others</strong>.</p>
+<p>total time <strong>d</strong> that <strong>n</strong> servers finished requests:</p>
+<div>
+$$\begin{align*}
+& d = \sum_{i=1}^nd_i = n * d_{avg} \\
+\\
+& {d_i}\text{ : duration of }  i^{th} \text{ server to finish the distributed requests}  \\
+& {d_{avg}}\text{ : avg duration that a server finished distribted requests} \\
+\end{align*}$$
+</div>
+<p>what least_conn algorithm want to archive is :</p>
+<div>
+$$ d_i \approx d_{avg} $$
+</div>
+<p>the duration that a server finished <strong>n</strong> requests:</p>
+<div>
+$$\begin{align*}
+d & = \sum_{i=1}^nt_i \\
+& = \sum_{i=1}^n(rtt_i + cpu\_real_i + other_i) \\
+& = n * t_{avg} \\
+& = n * (t_{avg\_net} + t_{avg\_real})\\
+& = n * (t_{avg\_net} + (t_{avg\_cpu\_sys\_usr} + t_{avg\_steal}) / cpu\_cores) \\
+\\
+& {t_{avg\_net}}\text{ : network transfer duration}  \\
+& {t_{avg\_real}}\text{ : real world time that request finished} \\
+& t_{avg\_cpu\_sys\_usr}{\text{ : cpu usage, sys and usr}} \\
+& t_{avg\_steal}{\text{ : cpu resource steal by other virtual machine, including cpu throttling time}}
+\end{align*}$$
+</div>
+<h2 id="case">Case</h2>
+<h3 id="1-two-same-server-with-different-cpu-usage-show">1. two same server with different cpu usage show</h3>
+<p><strong>d</strong>: was a server&rsquo;s time consume to finished the distributed requests, things that already know:</p>
+<ul>
+<li>two server&rsquo;s <strong>d</strong> is equal</li>
+<li>one server&rsquo;s <strong>cpu usage is lower than the other one</strong></li>
+<li>the server with <strong>lower cpu usage</strong> finished <strong>least</strong> requests at same duration</li>
+</ul>
+<p><strong>Think in math:</strong></p>
+<div>
+$$
+\begin{align*}
+\text{ Proof: } \\
+&\because \ \exists \ t_{avg\_cpu\_sys\_usr}\downarrow \ \bigwedge \ n \downarrow \\
+\\
+d &= n\downarrow t_{avg}\uparrow \\
+&= n\downarrow *(t_{avg\_net} + ((t_{avg\_cpu\_sys\_usr} + t_{avg\_steal}) / cpu\_cores))\uparrow \\
+\\
+&\therefore\ t_{avg\_net}\uparrow \ or \ \ (t_{avg\_cpu\_sys\_usr} + t_{avg\_steal})\uparrow \\
+&\because \ t_{avg\_cpu\_sys\_usr}\downarrow \\
+&\therefore \ t_{avg\_net}\uparrow \ or \ \ t_{avg\_steal}\uparrow
+\\
+Q.E.D
+\\
+\end{align*}
+$$
+</div>
+<p><strong>Conclusion:</strong></p>
+<p>possibilities cause <strong>network delay (time of avg_net)</strong> increase:</p>
+<ol>
+<li>network overload, for example: <strong>bandwidth</strong>, <strong>pps</strong> or others</li>
+<li>some other network problems</li>
+</ol>
+<p>possibilities cause <strong>cpu steal</strong> increase:</p>
+<ol>
+<li>oversolde, when in cloud enviroment</li>
+</ol>
+<p>possibilities cause <strong>cpu sys_usr</strong> decrease:</p>
+<ol>
+<li>incorrect system config, show diff with servers, use <strong>perf</strong> or others generate <strong>Flame graphs</strong></li>
+<li>cpu throttling, container enviroment which use <strong>CFS/cgroup</strong> limit cpu usage</li>
+<li>oversolde, which cause <strong>cpu steal</strong> increase</li>
+</ol>
+
+			</div>
+
+			<div class="tags">
+				
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>

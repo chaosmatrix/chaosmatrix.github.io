@@ -7,7 +7,19 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Thu, 28 Jul 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Jul 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Least_conn In Math</title>
+      <link>https://chaosmatrix.github.io/blog/least_conn_in_math/</link>
+      <pubDate>Fri, 29 Jul 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/least_conn_in_math/</guid>
+      <description>Basic least_conn is a load balance algorithm, which distributed incoming request to the server with least connected connections.
+Think in math distribute requests to n server, least_conn try to archive a goal every server as busy as others.
+total time d that n servers finished requests:
+$$\begin{align*} &amp; d = \sum_{i=1}^nd_i = n * d_{avg} \\ \\ &amp; {d_i}\text{ : duration of } i^{th} \text{ server to finish the distributed requests} \\ &amp; {d_{avg}}\text{ : avg duration that a server finished distribted requests} \\ \end{align*}$$ what least_conn algorithm want to archive is :</description>
+    </item>
+    
     <item>
       <title>Lock-Free Update Data</title>
       <link>https://chaosmatrix.github.io/blog/lock_free_update_data/</link>
