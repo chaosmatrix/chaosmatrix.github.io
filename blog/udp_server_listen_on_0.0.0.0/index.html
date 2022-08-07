@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>UDP Server Listen On 0.0.0.0 - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="UDP Server Listen On 0.0.0.0">
+<meta itemprop="description" content="Basic UDP is connectionless protocol, it won&rsquo;t create new socket for any incoming datagrams, so, function like LocalAddr() will return incorrect destination address that associated with incoming datagrams, and response datagram will be routed base on system&rsquo;s default routing rule, which might not match client&rsquo;s 5-tuple.
+Example:
+# basic 1. server: * has two address: 10.1.2.2(primary) and 10.1.2.3(secondary) * default route is 10.1.2.2 (default outgoing address) 2. client: * has one address: 10."><meta itemprop="datePublished" content="2022-08-01T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-08-01T21:05:18+08:00" />
+<meta itemprop="wordCount" content="571">
+<meta itemprop="keywords" content="" /><meta property="og:title" content="UDP Server Listen On 0.0.0.0" />
+<meta property="og:description" content="Basic UDP is connectionless protocol, it won&rsquo;t create new socket for any incoming datagrams, so, function like LocalAddr() will return incorrect destination address that associated with incoming datagrams, and response datagram will be routed base on system&rsquo;s default routing rule, which might not match client&rsquo;s 5-tuple.
+Example:
+# basic 1. server: * has two address: 10.1.2.2(primary) and 10.1.2.3(secondary) * default route is 10.1.2.2 (default outgoing address) 2. client: * has one address: 10." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/udp_server_listen_on_0.0.0.0/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-08-01T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-08-01T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="UDP Server Listen On 0.0.0.0"/>
+<meta name="twitter:description" content="Basic UDP is connectionless protocol, it won&rsquo;t create new socket for any incoming datagrams, so, function like LocalAddr() will return incorrect destination address that associated with incoming datagrams, and response datagram will be routed base on system&rsquo;s default routing rule, which might not match client&rsquo;s 5-tuple.
+Example:
+# basic 1. server: * has two address: 10.1.2.2(primary) and 10.1.2.3(secondary) * default route is 10.1.2.2 (default outgoing address) 2. client: * has one address: 10."/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">01</span>
+							<span class="rest">Aug 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">UDP Server Listen On 0.0.0.0</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<h2 id="basic">Basic</h2>
+<p>UDP is connectionless protocol, it won&rsquo;t create new socket for any incoming datagrams,
+so, function like <strong><code>LocalAddr()</code></strong> will return incorrect destination address that associated with incoming datagrams, and response datagram will be routed base on system&rsquo;s default routing rule, which might not match client&rsquo;s 5-tuple.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-txt" data-lang="txt"><span style="display:flex;"><span># basic
+</span></span><span style="display:flex;"><span>1. server:
+</span></span><span style="display:flex;"><span>	* has two address: 10.1.2.2(primary) and 10.1.2.3(secondary)
+</span></span><span style="display:flex;"><span>	* default route is 10.1.2.2 (default outgoing address)
+</span></span><span style="display:flex;"><span>2. client:
+</span></span><span style="display:flex;"><span>	* has one address: 10.1.2.5
+</span></span><span style="display:flex;"><span>	* strong end system, like linux
+</span></span><span style="display:flex;"><span>3. server start udp server:
+</span></span><span style="display:flex;"><span>	* listen on 0.0.0.0:12345
+</span></span><span style="display:flex;"><span>	* without any additional socketopt set
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span># communication
+</span></span><span style="display:flex;"><span>1. client send data to server with udp:
+</span></span><span style="display:flex;"><span>	* 10.1.2.5:23456 -&gt; 10.1.2.3:12345
+</span></span><span style="display:flex;"><span>2. server response:
+</span></span><span style="display:flex;"><span>	* 10.1.2.2:12345 -&gt; 10.1.2.5:23456
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span># result
+</span></span><span style="display:flex;"><span>1. client discard server&#39;s response:
+</span></span><span style="display:flex;"><span>	* (10.1.2.2:12345, 10.1.2.5:23456) not match (0.1.2.5:23456, 10.1.2.3:12345)
+</span></span><span style="display:flex;"><span>	* client awaiting server&#39;s response until timeout
+</span></span></code></pre></div><p>In <code>Strong End System</code> (like linux,windows,macos &hellip;), udp application only accept response datagram that has same <strong><code>5-tuple</code></strong>, others will be discarded.</p>
+<p><strong><code>There are two ways to solve this problem:</code></strong></p>
+<ol>
+<li>don&rsquo;t listen on <code>0.0.0.0</code>, create separate udp sockets for every address, and handle all socket&rsquo;s incoming datagrams with <code>select</code>, <code>epoll</code>, <code>multi-threading</code> or some other ways</li>
+<li>use <strong><code>control messages</code></strong> to deliver incoming datagram&rsquo;s destination address, and routing response daragram (determine send response datagram with which address)</li>
+</ol>
+<h2 id="example-with-code">Example With Code</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#00f">func</span> udpServer(network <span style="color:#2b91af">string</span>, addr <span style="color:#2b91af">string</span>) <span style="color:#2b91af">error</span> {
+</span></span><span style="display:flex;"><span>	laddr, err := net.ResolveUDPAddr(network, addr)
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	udpConn, err := net.ListenUDP(network, laddr)
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	fmt.Printf(<span style="color:#a31515">&#34;[+] listen on %s://%s\n&#34;</span>, network, addr)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	sysconn, err := udpConn.SyscallConn()
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// credit https://github.com/cloudflare/tubular/blob/main/example/main.go
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	<span style="color:#00f">var</span> rerr <span style="color:#2b91af">error</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">switch</span> network {
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">case</span> <span style="color:#a31515">&#34;udp&#34;</span>:
+</span></span><span style="display:flex;"><span>		err = sysconn.Control(<span style="color:#00f">func</span>(fd <span style="color:#2b91af">uintptr</span>) {
+</span></span><span style="display:flex;"><span>			rerr = unix.SetsockoptInt(int(fd), unix.SOL_IP, unix.IP_RECVORIGDSTADDR, 1)
+</span></span><span style="display:flex;"><span>			<span style="color:#00f">if</span> rerr != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#00f">return</span>
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>		})
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">case</span> <span style="color:#a31515">&#34;udp6&#34;</span>:
+</span></span><span style="display:flex;"><span>		err = sysconn.Control(<span style="color:#00f">func</span>(fd <span style="color:#2b91af">uintptr</span>) {
+</span></span><span style="display:flex;"><span>			rerr = unix.SetsockoptInt(int(fd), unix.SOL_IPV6, unix.IPV6_RECVORIGDSTADDR, 1)
+</span></span><span style="display:flex;"><span>			<span style="color:#00f">if</span> rerr != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#00f">return</span>
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>			rerr = unix.SetsockoptInt(int(fd), unix.SOL_IPV6, unix.IPV6_FREEBIND, 1)
+</span></span><span style="display:flex;"><span>		})
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">default</span>:
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> fmt.Errorf(<span style="color:#a31515">&#34;unsupport network: %s&#34;</span>, network)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> rerr != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> rerr
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	buf := make([]<span style="color:#2b91af">byte</span>, 512)
+</span></span><span style="display:flex;"><span>	oob := make([]<span style="color:#2b91af">byte</span>, unix.CmsgSpace(unix.SizeofSockaddrInet6))
+</span></span><span style="display:flex;"><span>	n, oobn, _, remote, err := udpConn.ReadMsgUDP(buf, oob)
+</span></span><span style="display:flex;"><span>	fmt.Printf(<span style="color:#a31515">&#34;[+] read %d byte, from %s, error %v\n&#34;</span>, n, remote, err)
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// oob contains socket control messages which we need to parse.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	scms, err := unix.ParseSocketControlMessage(oob[:oobn])
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// retrieve the destination address from the SCM.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	sa, err := unix.ParseOrigDstAddr(&amp;scms[0])
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	dAddr := <span style="color:#a31515">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// encode the destination address into a cmsg.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	<span style="color:#00f">var</span> info []<span style="color:#2b91af">byte</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">switch</span> v := sa.(<span style="color:#00f">type</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">case</span> *unix.SockaddrInet4:
+</span></span><span style="display:flex;"><span>		info = unix.PktInfo4(&amp;unix.Inet4Pktinfo{
+</span></span><span style="display:flex;"><span>			Spec_dst: v.Addr,
+</span></span><span style="display:flex;"><span>		})
+</span></span><span style="display:flex;"><span>		dAddr = net.IP(v.Addr[:]).String()
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">case</span> *unix.SockaddrInet6:
+</span></span><span style="display:flex;"><span>		info = unix.PktInfo6(&amp;unix.Inet6Pktinfo{
+</span></span><span style="display:flex;"><span>			Addr: v.Addr,
+</span></span><span style="display:flex;"><span>		})
+</span></span><span style="display:flex;"><span>		dAddr = net.IP(v.Addr[:]).String()
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	fmt.Printf(<span style="color:#a31515">&#34;[+] datagram recv: %s -&gt; %s\n&#34;</span>, remote, dAddr)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// reply from the original destination address.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	n, _, err = udpConn.WriteMsgUDP(append([]byte(<span style="color:#a31515">&#34;[+] echo: &#34;</span>), buf[:n]...), info, remote)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> err != <span style="color:#00f">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	fmt.Printf(<span style="color:#a31515">&#34;[+] write %d bytes to %s\n&#34;</span>, n, remote)
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">return</span> err
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="faq">FAQ</h2>
+<p>Q. Can we solve this problem with policy routing or nf_conntrack ?<br>
+A: No (I have tried and failed).</p>
+<p>Q: Can we handle ipv4 and ipv6 datagrams with one udp socket ?<br>
+A: Yes, if you never use <strong><code>control messages</code></strong> to routing datagrams, else No (golang).</p>
+<h2 id="credits">Credits</h2>
+<ol>
+<li><a href="https://github.com/cloudflare/tubular/blob/main/example/main.go">https://github.com/cloudflare/tubular/blob/main/example/main.go</a></li>
+</ol>
+<h2 id="reference">Reference</h2>
+<ol>
+<li><a href="https://www.man7.org/linux/man-pages/man7/ip.7.html">IP_PKTINFO || IP_RECVORIGDSTADDR</a></li>
+<li><a href="https://github.com/nginx/nginx/blob/release-1.22.0/src/event/ngx_event_udp.c#L32">how nginx recv udp data grams when listen on 0.0.0.0</a></li>
+</ol>
+
+			</div>
+
+			<div class="tags">
+				
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>

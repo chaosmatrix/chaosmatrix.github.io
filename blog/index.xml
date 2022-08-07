@@ -7,7 +7,18 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Fri, 29 Jul 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 01 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>UDP Server Listen On 0.0.0.0</title>
+      <link>https://chaosmatrix.github.io/blog/udp_server_listen_on_0.0.0.0/</link>
+      <pubDate>Mon, 01 Aug 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/udp_server_listen_on_0.0.0.0/</guid>
+      <description>Basic UDP is connectionless protocol, it won&amp;rsquo;t create new socket for any incoming datagrams, so, function like LocalAddr() will return incorrect destination address that associated with incoming datagrams, and response datagram will be routed base on system&amp;rsquo;s default routing rule, which might not match client&amp;rsquo;s 5-tuple.
+Example:
+# basic 1. server: * has two address: 10.1.2.2(primary) and 10.1.2.3(secondary) * default route is 10.1.2.2 (default outgoing address) 2. client: * has one address: 10.</description>
+    </item>
+    
     <item>
       <title>Think Least_Conn In Math</title>
       <link>https://chaosmatrix.github.io/blog/think_least_conn_in_math/</link>
