@@ -7,7 +7,16 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Mon, 01 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 08 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>DNS Should I Use DNSSEC</title>
+      <link>https://chaosmatrix.github.io/blog/dns_should_i_use_dnssec/</link>
+      <pubDate>Mon, 08 Aug 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/dns_should_i_use_dnssec/</guid>
+      <description>Abstract WARNING DNSSEC can only works as expected when the resolver ensure the zone and the upstream nameserver support DNSSEC WARNING less 50% top-1m website/domain enable DNSSEC, most zone owned by google/amazon/microsoft &amp;hellip; not support DNSSEC DNSSEC can only make sure the data that the resolver fetching is provided by the zone&amp;rsquo;s owner (require resolver verify the signature) DNSSEC can detect (not prevent) dns hijacking only when resolver/client verify the signature As Owner/Server: Assess only use it when you pretty sure you need it, and can&amp;rsquo;t replace with another way, and should base on the report that the use of DNSSEC validation for your customer&amp;rsquo;s ISPs public resolvers use E2EE protocol to protect the communication between client and server instead of ensuring client get the right server&amp;rsquo;s address try to use DNS-Over-HTTPS/DNS-Over-QUIC to prevent dns hijacking if you can control how client resolve domain, for example desktop/mobile app As Resolver: Recommend But Not Forcing Recursive Resolver: Recommend, try to add additional security check, like credit score of ip address to detect dns hijacking Forward Resolver: Not Recommend, try to communicate with upstream nameserver with E2EE protocol, use DNSSEC only for the zone that pretty sure has full DNSSEC support and sensitive zone (like bank, shop) Basic DNSSEC strengthens authentication in DNS using digital signatures based on public key cryptography.</description>
+    </item>
+    
     <item>
       <title>UDP Server Listen On 0.0.0.0</title>
       <link>https://chaosmatrix.github.io/blog/udp_server_listen_on_0.0.0.0/</link>
