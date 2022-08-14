@@ -8,8 +8,20 @@
     <loc>https://chaosmatrix.github.io/</loc>
     <lastmod>2022-08-08T21:05:18+08:00</lastmod>
   </url><url>
+    <loc>https://chaosmatrix.github.io/tags/dns/</loc>
+    <lastmod>2022-08-08T21:05:18+08:00</lastmod>
+  </url><url>
     <loc>https://chaosmatrix.github.io/blog/dns_should_i_use_dnssec/</loc>
     <lastmod>2022-08-08T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/network/</loc>
+    <lastmod>2022-08-08T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/</loc>
+    <lastmod>2022-08-08T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/udp/</loc>
+    <lastmod>2022-08-01T21:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/blog/udp_server_listen_on_0.0.0.0/</loc>
     <lastmod>2022-08-01T21:05:18+08:00</lastmod>
@@ -23,7 +35,13 @@
     <loc>https://chaosmatrix.github.io/blog/detect_half_closed_connection/</loc>
     <lastmod>2022-07-27T21:05:18+08:00</lastmod>
   </url><url>
+    <loc>https://chaosmatrix.github.io/tags/tcp/</loc>
+    <lastmod>2022-07-27T21:05:18+08:00</lastmod>
+  </url><url>
     <loc>https://chaosmatrix.github.io/wasm/doh-client/</loc>
+    <lastmod>2022-07-16T06:23:51+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/wasm/</loc>
     <lastmod>2022-07-16T06:23:51+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/wasm/</loc>
@@ -33,7 +51,5 @@
     <lastmod>2019-12-17T20:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/categories/</loc>
-  </url><url>
-    <loc>https://chaosmatrix.github.io/tags/</loc>
   </url>
 </urlset>

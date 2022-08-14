@@ -9,7 +9,7 @@ WARNING: you should only use this way when you ensure there&#39;s no unread valu
 // Golang, read 0-byte, always return nil // https://github.com/golang/go/issues/10940#issuecomment-245773886 func checkConn(conn net.Conn, timeout time.Duration) error { buf := make([]byte, 1) err := conn.SetReadDeadline(time.Now().Add(timeout)) if err != nil { return err } n, err := conn.Read(buf) if err == io.EOF { return err } if n !"><meta itemprop="datePublished" content="2022-07-27T21:05:18+08:00" />
 <meta itemprop="dateModified" content="2022-07-27T21:05:18+08:00" />
 <meta itemprop="wordCount" content="256">
-<meta itemprop="keywords" content="" /><meta property="og:title" content="Detect Half Closed Connection" />
+<meta itemprop="keywords" content="network,tcp," /><meta property="og:title" content="Detect Half Closed Connection" />
 <meta property="og:description" content="$common$ read 1-byte with deadline depend on program language or platform implementation, some use read 0-byte
 WARNING: you should only use this way when you ensure there&#39;s no unread value data
 // Golang, read 0-byte, always return nil // https://github.com/golang/go/issues/10940#issuecomment-245773886 func checkConn(conn net.Conn, timeout time.Duration) error { buf := make([]byte, 1) err := conn.SetReadDeadline(time.Now().Add(timeout)) if err != nil { return err } n, err := conn.Read(buf) if err == io.EOF { return err } if n !" />
@@ -154,6 +154,14 @@ WARNING: you should only use this way when you ensure there&#39;s no unread valu
 
 			<div class="tags">
 				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/network">network</a></li>
+							
+							<li><a href="/tags/tcp">tcp</a></li>
+							
+						</ul>
 					
 				
 			</div></div>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>tcp on Chaosmatrix</title>
+    <link>https://chaosmatrix.github.io/tags/tcp/</link>
+    <description>Recent content in tcp on Chaosmatrix</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Copyright chaosmatrix</copyright>
+    <lastBuildDate>Wed, 27 Jul 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/tcp/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Detect Half Closed Connection</title>
+      <link>https://chaosmatrix.github.io/blog/detect_half_closed_connection/</link>
+      <pubDate>Wed, 27 Jul 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/detect_half_closed_connection/</guid>
+      <description>$common$ read 1-byte with deadline depend on program language or platform implementation, some use read 0-byte
+WARNING: you should only use this way when you ensure there&#39;s no unread value data
+// Golang, read 0-byte, always return nil // https://github.com/golang/go/issues/10940#issuecomment-245773886 func checkConn(conn net.Conn, timeout time.Duration) error { buf := make([]byte, 1) err := conn.SetReadDeadline(time.Now().Add(timeout)) if err != nil { return err } n, err := conn.Read(buf) if err == io.EOF { return err } if n !</description>
+    </item>
+    
+  </channel>
+</rss>

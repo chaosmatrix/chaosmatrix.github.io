@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Chaosmatrix</title>
-    <link>https://chaosmatrix.github.io/</link>
-    <description>Recent content on Chaosmatrix</description>
+    <title>network on Chaosmatrix</title>
+    <link>https://chaosmatrix.github.io/tags/network/</link>
+    <description>Recent content in network on Chaosmatrix</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Mon, 08 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 08 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/network/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>DNS Should I Use DNSSEC</title>
       <link>https://chaosmatrix.github.io/blog/dns_should_i_use_dnssec/</link>
@@ -29,29 +29,6 @@ Example:
     </item>
     
     <item>
-      <title>Think Least_Conn In Math</title>
-      <link>https://chaosmatrix.github.io/blog/think_least_conn_in_math/</link>
-      <pubDate>Fri, 29 Jul 2022 21:05:18 +0800</pubDate>
-      
-      <guid>https://chaosmatrix.github.io/blog/think_least_conn_in_math/</guid>
-      <description>Basic least_conn is a load balance algorithm, which distributed incoming request to the server with least connected connections.
-Think in math distribute requests to n server, least_conn try to archive a goal every server as busy as others.
-total time d that n servers finished requests:
-$$\begin{align*} &amp; d = \sum_{i=1}^nd_i = n * d_{avg} \\ \\ &amp; {d_i}\text{ : duration of } i^{th} \text{ server to finish the distributed requests} \\ &amp; {d_{avg}}\text{ : avg duration that a server finished distribted requests} \\ \end{align*}$$ what least_conn algorithm want to archive is :</description>
-    </item>
-    
-    <item>
-      <title>Lock-Free Update Data</title>
-      <link>https://chaosmatrix.github.io/blog/lock_free_update_data/</link>
-      <pubDate>Thu, 28 Jul 2022 21:05:18 +0800</pubDate>
-      
-      <guid>https://chaosmatrix.github.io/blog/lock_free_update_data/</guid>
-      <description>Rule:
-update pointer, rather than update pointer&amp;rsquo;s data an object with zero reference (unreachable object), will be recycle by GC var rcuCfg *RcuCfg type RcuCfg struct { cfg *Cfg lock sync.Mutex // even don&amp;#39;t need } func newCfgFromOld(old *Cfg) { cfg := &amp;amp;Cfg{} DeepCopy(cfg, old) return cfg } func rcuRead() *Cfg { return rcuCfg.cfg } func rcuUpdate() { rcuCfg.lock.Lock() defer rcuCfg.lock.Unlock() cfg := newCfgFromOld(rcuCfg.cfg) rcuCfg.cfg = cfg } reference:
-what is RCU </description>
-    </item>
-    
-    <item>
       <title>Detect Half Closed Connection</title>
       <link>https://chaosmatrix.github.io/blog/detect_half_closed_connection/</link>
       <pubDate>Wed, 27 Jul 2022 21:05:18 +0800</pubDate>
@@ -60,26 +37,6 @@ what is RCU </description>
       <description>$common$ read 1-byte with deadline depend on program language or platform implementation, some use read 0-byte
 WARNING: you should only use this way when you ensure there&#39;s no unread value data
 // Golang, read 0-byte, always return nil // https://github.com/golang/go/issues/10940#issuecomment-245773886 func checkConn(conn net.Conn, timeout time.Duration) error { buf := make([]byte, 1) err := conn.SetReadDeadline(time.Now().Add(timeout)) if err != nil { return err } n, err := conn.Read(buf) if err == io.EOF { return err } if n !</description>
-    </item>
-    
-    <item>
-      <title>Doh Client</title>
-      <link>https://chaosmatrix.github.io/wasm/doh-client/</link>
-      <pubDate>Sat, 16 Jul 2022 06:23:51 +0800</pubDate>
-      
-      <guid>https://chaosmatrix.github.io/wasm/doh-client/</guid>
-      <description>Require:
-DoH Server must follow by the Cross-Origin Resource Sharing (CORS) Notice:
-If there any display issue, open with new tab View Source Code on GitHUB GET POST A AAAA CAA CNAME DS HTTPS MX NAPTR NS PTR SOA SPF SRV TXT JSON RFC8484 Send </description>
-    </item>
-    
-    <item>
-      <title>Transaction Ops</title>
-      <link>https://chaosmatrix.github.io/blog/transaction-ops/</link>
-      <pubDate>Tue, 17 Dec 2019 20:05:18 +0800</pubDate>
-      
-      <guid>https://chaosmatrix.github.io/blog/transaction-ops/</guid>
-      <description>Rules Every Operation must has RollBack Operation All ops done success or no ops done Transaction Ops Rule Stages Backup Stage backup current system state GoTo Next if Success Exit if it fails PreTest Stage in order to generate test rule make sure system working before apply operation GoTo Next if Success Exit if it fails Operate Stage do the operation that we want to do GoTo Next if Success GoTo RollBack Stage if it fails PostTest Stage apply custom-built test rule apply test rule generate in PreTest Stage GoTo RollBack Stage if it fails RollBack Stage only exec while Failed PostTest Stage apply Backup Stage to rollback system Use Transaction Ops Framework Example Update Network Route #!</description>
     </item>
     
   </channel>

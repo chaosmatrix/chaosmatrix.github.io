@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Wasms on Chaosmatrix</title>
-    <link>https://chaosmatrix.github.io/wasm/</link>
-    <description>Recent content in Wasms on Chaosmatrix</description>
+    <title>wasm on Chaosmatrix</title>
+    <link>https://chaosmatrix.github.io/tags/wasm/</link>
+    <description>Recent content in wasm on Chaosmatrix</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Sat, 16 Jul 2022 06:23:51 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/wasm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 16 Jul 2022 06:23:51 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/wasm/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Doh Client</title>
       <link>https://chaosmatrix.github.io/wasm/doh-client/</link>
