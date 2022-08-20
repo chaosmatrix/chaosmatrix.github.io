@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>nginx on Chaosmatrix</title>
+    <link>https://chaosmatrix.github.io/tags/nginx/</link>
+    <description>Recent content in nginx on Chaosmatrix</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Copyright chaosmatrix</copyright>
+    <lastBuildDate>Sat, 20 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/nginx/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HTTP Serving Compressed File</title>
+      <link>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</link>
+      <pubDate>Sat, 20 Aug 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</guid>
+      <description>Abstract Most browser support gzip, deflate, br Program language builtin support gzip, deflate, br has community support Nginx - ngx_http_gzip_static_module Conclusions:
+Check config: if gzip_static enable or not ? Check request header: client support gzip or not ? when using common algorithm, like &amp;ldquo;gzip&amp;rdquo;, skiping this seems no problem Mapping url to file path with given rule (filename extension is &amp;ldquo;.gz&amp;rdquo;) Setting response&amp;rsquo;s headers: Content-Length/Last-Modified/Etag?/Content-Type? Ensuring response&amp;rsquo;s header Content-Encoding: gzip // nginx-1.</description>
+    </item>
+    
+  </channel>
+</rss>

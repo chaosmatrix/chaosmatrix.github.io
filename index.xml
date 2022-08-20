@@ -7,7 +7,17 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Mon, 08 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 20 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HTTP Serving Compressed File</title>
+      <link>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</link>
+      <pubDate>Sat, 20 Aug 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</guid>
+      <description>Abstract Most browser support gzip, deflate, br Program language builtin support gzip, deflate, br has community support Nginx - ngx_http_gzip_static_module Conclusions:
+Check config: if gzip_static enable or not ? Check request header: client support gzip or not ? when using common algorithm, like &amp;ldquo;gzip&amp;rdquo;, skiping this seems no problem Mapping url to file path with given rule (filename extension is &amp;ldquo;.gz&amp;rdquo;) Setting response&amp;rsquo;s headers: Content-Length/Last-Modified/Etag?/Content-Type? Ensuring response&amp;rsquo;s header Content-Encoding: gzip // nginx-1.</description>
+    </item>
+    
     <item>
       <title>DNS Should I Use DNSSEC</title>
       <link>https://chaosmatrix.github.io/blog/dns_should_i_use_dnssec/</link>

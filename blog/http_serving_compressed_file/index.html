@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>HTTP Serving Compressed File - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="HTTP Serving Compressed File">
+<meta itemprop="description" content="Abstract Most browser support gzip, deflate, br Program language builtin support gzip, deflate, br has community support Nginx - ngx_http_gzip_static_module Conclusions:
+Check config: if gzip_static enable or not ? Check request header: client support gzip or not ? when using common algorithm, like &ldquo;gzip&rdquo;, skiping this seems no problem Mapping url to file path with given rule (filename extension is &ldquo;.gz&rdquo;) Setting response&rsquo;s headers: Content-Length/Last-Modified/Etag?/Content-Type? Ensuring response&rsquo;s header Content-Encoding: gzip // nginx-1."><meta itemprop="datePublished" content="2022-08-20T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-08-20T21:05:18+08:00" />
+<meta itemprop="wordCount" content="432">
+<meta itemprop="keywords" content="nginx,compressor," /><meta property="og:title" content="HTTP Serving Compressed File" />
+<meta property="og:description" content="Abstract Most browser support gzip, deflate, br Program language builtin support gzip, deflate, br has community support Nginx - ngx_http_gzip_static_module Conclusions:
+Check config: if gzip_static enable or not ? Check request header: client support gzip or not ? when using common algorithm, like &ldquo;gzip&rdquo;, skiping this seems no problem Mapping url to file path with given rule (filename extension is &ldquo;.gz&rdquo;) Setting response&rsquo;s headers: Content-Length/Last-Modified/Etag?/Content-Type? Ensuring response&rsquo;s header Content-Encoding: gzip // nginx-1." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/http_serving_compressed_file/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-08-20T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-08-20T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="HTTP Serving Compressed File"/>
+<meta name="twitter:description" content="Abstract Most browser support gzip, deflate, br Program language builtin support gzip, deflate, br has community support Nginx - ngx_http_gzip_static_module Conclusions:
+Check config: if gzip_static enable or not ? Check request header: client support gzip or not ? when using common algorithm, like &ldquo;gzip&rdquo;, skiping this seems no problem Mapping url to file path with given rule (filename extension is &ldquo;.gz&rdquo;) Setting response&rsquo;s headers: Content-Length/Last-Modified/Etag?/Content-Type? Ensuring response&rsquo;s header Content-Encoding: gzip // nginx-1."/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">20</span>
+							<span class="rest">Aug 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">HTTP Serving Compressed File</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<h2 id="abstract">Abstract</h2>
+<ol>
+<li>Most browser support <strong><code>gzip, deflate, br</code></strong></li>
+<li>Program language <strong>builtin</strong> support <strong><code>gzip, deflate</code></strong>,  <strong><code>br</code></strong> has <strong>community support</strong></li>
+</ol>
+<h2 id="nginx---ngx_http_gzip_static_module">Nginx - ngx_http_gzip_static_module</h2>
+<p><strong><code>Conclusions:</code></strong></p>
+<ol>
+<li>Check config: if gzip_static enable or not ?</li>
+<li>Check request header: client support gzip or not ?
+<ul>
+<li>when using common algorithm, like &ldquo;gzip&rdquo;, skiping this seems no problem</li>
+</ul>
+</li>
+<li>Mapping url to file path with given rule (filename extension is &ldquo;.gz&rdquo;)</li>
+<li>Setting response&rsquo;s headers: Content-Length/Last-Modified/Etag?/Content-Type?</li>
+<li>Ensuring response&rsquo;s header <strong><code>Content-Encoding: gzip</code></strong></li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// nginx-1.22.0 - src/http/modules/ngx_http_gzip_static_module.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> ngx_int_t
+</span></span><span style="display:flex;"><span>ngx_http_gzip_static_handler(ngx_http_request_t *r)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// enable gzip_static
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">if</span> (gzcf-&gt;enable == NGX_HTTP_GZIP_STATIC_ON) {
+</span></span><span style="display:flex;"><span>		<span style="color:#008000">// clietn support gzip ? Accept-Encoding: gzip
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        rc = ngx_http_gzip_ok(r);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">/* always */</span>
+</span></span><span style="display:flex;"><span>        rc = NGX_OK;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    p = ngx_http_map_uri_to_path(r, &amp;path, &amp;root, <span style="color:#00f">sizeof</span>(<span style="color:#a31515">&#34;.gz&#34;</span>) - 1);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (p == NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NGX_HTTP_INTERNAL_SERVER_ERROR;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// local gzip static file&#39;s filename must has &#34;.gz&#34; extension
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    *p++ = <span style="color:#a31515">&#39;.&#39;</span>;
+</span></span><span style="display:flex;"><span>    *p++ = <span style="color:#a31515">&#39;g&#39;</span>;
+</span></span><span style="display:flex;"><span>    *p++ = <span style="color:#a31515">&#39;z&#39;</span>;
+</span></span><span style="display:flex;"><span>    *p = <span style="color:#a31515">&#39;\0&#39;</span>;
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// like serving static file, but ensure header &#34;Content-Encoding: gzip&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	
+</span></span><span style="display:flex;"><span>    r-&gt;headers_out.status = NGX_HTTP_OK;
+</span></span><span style="display:flex;"><span>    r-&gt;headers_out.content_length_n = of.size;
+</span></span><span style="display:flex;"><span>    r-&gt;headers_out.last_modified_time = of.mtime;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ngx_http_set_etag(r) != NGX_OK) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NGX_HTTP_INTERNAL_SERVER_ERROR;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ngx_http_set_content_type(r) != NGX_OK) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NGX_HTTP_INTERNAL_SERVER_ERROR;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    h = ngx_list_push(&amp;r-&gt;headers_out.headers);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (h == NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NGX_HTTP_INTERNAL_SERVER_ERROR;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    h-&gt;hash = 1;
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// response must set header: Content-Encoding: gzip
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    ngx_str_set(&amp;h-&gt;key, <span style="color:#a31515">&#34;Content-Encoding&#34;</span>);
+</span></span><span style="display:flex;"><span>    ngx_str_set(&amp;h-&gt;value, <span style="color:#a31515">&#34;gzip&#34;</span>);
+</span></span><span style="display:flex;"><span>    r-&gt;headers_out.content_encoding = h;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> 	...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> ngx_http_output_filter(r, &amp;out);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="example---serving-brotli-static-file-with-nginx">Example - serving brotli static file with nginx</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-nginx" data-lang="nginx"><span style="display:flex;"><span><span style="color:#00f">server</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">...</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a31515">location</span> <span style="color:#a31515">/br-static</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#00f">if</span> <span style="color:#a31515">(</span>$http_accept_encoding ~ <span style="color:#a31515">&#34;(,</span> <span style="color:#a31515">br</span>$<span style="color:#a31515">)|(,</span> <span style="color:#a31515">br,)|(^br,)|(</span> <span style="color:#a31515">br,)|(^br</span>$<span style="color:#a31515">)&#34;)</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#00f">add_header</span> <span style="color:#a31515">Content-Encoding</span> <span style="color:#a31515">br</span>;
+</span></span><span style="display:flex;"><span>				<span style="color:#00f">rewrite</span> <span style="color:#a31515">^(.*)</span>$ <span style="color:#a31515">/</span>$1.br <span style="color:#a31515">break</span>;
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>			<span style="color:#00f">try_files</span> $uri =404;
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">...</span>
+</span></span><span style="display:flex;"><span><span style="">}</span>
+</span></span></code></pre></div><h2 id="metrics---compressor-benchmark">Metrics - compressor benchmark</h2>
+<p><strong><code>Conclusions:</code></strong></p>
+<ol>
+<li>To prevent simply selecting a compressor based on ratio and speed, resource usage and compatibility with other tools (rsync) must also be considered.</li>
+<li><a href="https://github.com/facebook/zstd">zstd</a> and gzip can be rsync friendly with given option (not default)</li>
+<li>The ratio is highly dependent on the file&rsquo;s content, for common log file, <strong>&gt;3</strong> is possible</li>
+</ol>
+<p><strong><code>Credit:</code></strong> <a href="https://github.com/facebook/zstd#benchmarks">zstd</a></p>
+<table>
+<thead>
+<tr>
+<th>Compressor name</th>
+<th>Ratio</th>
+<th>Compression</th>
+<th>Decompress.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>zstd 1.5.1 -1</strong></td>
+<td>2.887</td>
+<td>530 MB/s</td>
+<td>1700 MB/s</td>
+</tr>
+<tr>
+<td><a href="http://www.zlib.net/">zlib</a> 1.2.11 -1</td>
+<td>2.743</td>
+<td>95 MB/s</td>
+<td>400 MB/s</td>
+</tr>
+<tr>
+<td>brotli 1.0.9 -0</td>
+<td>2.702</td>
+<td>395 MB/s</td>
+<td>450 MB/s</td>
+</tr>
+<tr>
+<td><strong>zstd 1.5.1 &ndash;fast=1</strong></td>
+<td>2.437</td>
+<td>600 MB/s</td>
+<td>2150 MB/s</td>
+</tr>
+<tr>
+<td><strong>zstd 1.5.1 &ndash;fast=3</strong></td>
+<td>2.239</td>
+<td>670 MB/s</td>
+<td>2250 MB/s</td>
+</tr>
+<tr>
+<td>quicklz 1.5.0 -1</td>
+<td>2.238</td>
+<td>540 MB/s</td>
+<td>760 MB/s</td>
+</tr>
+<tr>
+<td><strong>zstd 1.5.1 &ndash;fast=4</strong></td>
+<td>2.148</td>
+<td>710 MB/s</td>
+<td>2300 MB/s</td>
+</tr>
+<tr>
+<td>lzo1x 2.10 -1</td>
+<td>2.106</td>
+<td>660 MB/s</td>
+<td>845 MB/s</td>
+</tr>
+<tr>
+<td><a href="http://www.lz4.org/">lz4</a> 1.9.3</td>
+<td>2.101</td>
+<td>740 MB/s</td>
+<td>4500 MB/s</td>
+</tr>
+<tr>
+<td>lzf 3.6 -1</td>
+<td>2.077</td>
+<td>410 MB/s</td>
+<td>830 MB/s</td>
+</tr>
+<tr>
+<td>snappy 1.1.9</td>
+<td>2.073</td>
+<td>550 MB/s</td>
+<td>1750 MB/s</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reference">Reference</h2>
+<ol>
+<li><a href="https://nginx.org/en/docs/http/ngx_http_gzip_static_module.html">ngx_http_gzip_static_module</a></li>
+<li><a href="https://github.com/facebook/zstd">zstd</a></li>
+<li><a href="https://news.ycombinator.com/item?id=32529412">AWS switch from gzip to zstd – about 30% reduction in compressed S3 storage</a></li>
+<li><a href="https://github.com/dm-vdo/vdo">A set of userspace tools for managing pools of deduplicated and/or compressed block storage</a></li>
+<li><a href="https://gregoryszorc.com/blog/2017/03/07/better-compression-with-zstandard/">better-compression-with-zstandard</a></li>
+</ol>
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/nginx">nginx</a></li>
+							
+							<li><a href="/tags/compressor">compressor</a></li>
+							
+						</ul>
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>

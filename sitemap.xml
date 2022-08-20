@@ -3,10 +3,22 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://chaosmatrix.github.io/blog/</loc>
-    <lastmod>2022-08-08T21:05:18+08:00</lastmod>
+    <lastmod>2022-08-20T21:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/</loc>
-    <lastmod>2022-08-08T21:05:18+08:00</lastmod>
+    <lastmod>2022-08-20T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/compressor/</loc>
+    <lastmod>2022-08-20T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</loc>
+    <lastmod>2022-08-20T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/nginx/</loc>
+    <lastmod>2022-08-20T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/</loc>
+    <lastmod>2022-08-20T21:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/tags/dns/</loc>
     <lastmod>2022-08-08T21:05:18+08:00</lastmod>
@@ -15,9 +27,6 @@
     <lastmod>2022-08-08T21:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/tags/network/</loc>
-    <lastmod>2022-08-08T21:05:18+08:00</lastmod>
-  </url><url>
-    <loc>https://chaosmatrix.github.io/tags/</loc>
     <lastmod>2022-08-08T21:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/tags/udp/</loc>
