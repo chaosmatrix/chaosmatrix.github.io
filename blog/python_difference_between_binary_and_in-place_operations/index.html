@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[Python] Difference Between Binary and In-place Operations - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="[Python] Difference Between Binary and In-place Operations">
+<meta itemprop="description" content="Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &ldquo;pythonic&rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&rsquo;s current memory allocated and id() to checking whether object&rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like &#43; , - , * , / , % ."><meta itemprop="datePublished" content="2022-08-21T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-08-21T21:05:18+08:00" />
+<meta itemprop="wordCount" content="988">
+<meta itemprop="keywords" content="python," /><meta property="og:title" content="[Python] Difference Between Binary and In-place Operations" />
+<meta property="og:description" content="Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &ldquo;pythonic&rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&rsquo;s current memory allocated and id() to checking whether object&rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like &#43; , - , * , / , % ." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-08-21T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-08-21T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="[Python] Difference Between Binary and In-place Operations"/>
+<meta name="twitter:description" content="Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &ldquo;pythonic&rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&rsquo;s current memory allocated and id() to checking whether object&rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like &#43; , - , * , / , % ."/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">21</span>
+							<span class="rest">Aug 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">[Python] Difference Between Binary and In-place Operations</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<h2 id="abstract">Abstract</h2>
+<ol>
+<li>Use of a <strong><code>compound operator</code></strong> that will be compiled into <strong>INPLACE_</strong>* bytecode instruction at the end may result in a bug that is difficult to debug.</li>
+<li>Why <strong>In-place</strong> operation design like this ? to make code more &ldquo;pythonic&rdquo; and <strong>increase performance</strong> in some case (avoid allocating new memory areas. this can be verified by using <code>sys.getsizeof()</code> to get object&rsquo;s current memory allocated and <code>id()</code> to checking whether object&rsquo;s pointer change or not)</li>
+</ol>
+<h2 id="what">What</h2>
+<p>As python coder, <strong>binary operation</strong> is the code using  <strong>arithmetic operator</strong> like <code>+ , - , * , / , % ...</code>, <strong>in-place operation</strong> is the code using <strong>compound operator</strong> like <code>+= , -= , /= , *= ...</code>. If the variable&rsquo;s type don&rsquo;t support <strong>in-place operation</strong>, it will fallback into <strong>binary operation</strong>.</p>
+<p>In python bytecode, all <strong>compound operators</strong> will be compiled into <strong>INPLACE_</strong>* bytecode instructions.</p>
+<p>Normally, only some <strong>sequence-objects</strong> (PySequence) will show a difference between <strong>binary operation</strong> and <strong>in-place operation</strong>, they support <strong>in-place operation</strong>, which <code>sq_inplace_concat</code> or <code>sq_inplace_repeat</code> field not equal 0.</p>
+<hr>
+<blockquote>
+<p>Binary operations remove the top of the stack (TOS)  and the second top-most stack item (TOS1) from the stack. They perform the operation, and put the result back on the stack.</p>
+</blockquote>
+<blockquote>
+<p>In-place operations are like binary operations, in that they remove TOS and TOS1, and push the result back on the stack, but the operation is done in-place when TOS1 supports it, and the resulting TOS may be (but does not have to be) the original TOS1.</p>
+</blockquote>
+<p>Credit: <a href="https://docs.python.org/3.8/library/dis.html">dis - Disassembler for Python bytecode</a></p>
+<hr>
+<h2 id="python-internal-code">Python Internal Code</h2>
+<h3 id="source-code---pysequence-abstract-methods">Source Code - PySequence Abstract Methods</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// https://github.com/python/cpython/blob/6fd4c8ec7740523bb81191c013118d9d6959bc9d/Objects/abstract.c#L1746
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// binary operation
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// example: l = [1] + [2]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>PyObject *
+</span></span><span style="display:flex;"><span>PySequence_Concat(PyObject *s, PyObject *o)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (s == NULL || o == NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> null_error();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    PySequenceMethods *m = Py_TYPE(s)-&gt;tp_as_sequence;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (m &amp;&amp; m-&gt;sq_concat) {
+</span></span><span style="display:flex;"><span>        PyObject *res = m-&gt;sq_concat(s, o);
+</span></span><span style="display:flex;"><span>        assert(_Py_CheckSlotResult(s, <span style="color:#a31515">&#34;+&#34;</span>, res != NULL));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> res;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Instances of user classes defining an __add__() method only
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">       have an nb_add slot, not an sq_concat slot.      So we fall back
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">       to nb_add if both arguments appear to be sequences. */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (PySequence_Check(s) &amp;&amp; PySequence_Check(o)) {
+</span></span><span style="display:flex;"><span>        PyObject *result = BINARY_OP1(s, o, NB_SLOT(nb_add), <span style="color:#a31515">&#34;+&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (result != Py_NotImplemented)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> result;
+</span></span><span style="display:flex;"><span>        Py_DECREF(result);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> type_error(<span style="color:#a31515">&#34;&#39;%.200s&#39; object can&#39;t be concatenated&#34;</span>, s);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// https://github.com/python/cpython/blob/6fd4c8ec7740523bb81191c013118d9d6959bc9d/Objects/abstract.c#L1803
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// in-place operation
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// example: l = [1], l += [2]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>PyObject *
+</span></span><span style="display:flex;"><span>PySequence_InPlaceConcat(PyObject *s, PyObject *o)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (s == NULL || o == NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> null_error();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    PySequenceMethods *m = Py_TYPE(s)-&gt;tp_as_sequence;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (m &amp;&amp; m-&gt;sq_inplace_concat) {
+</span></span><span style="display:flex;"><span>        PyObject *res = m-&gt;sq_inplace_concat(s, o);
+</span></span><span style="display:flex;"><span>        assert(_Py_CheckSlotResult(s, <span style="color:#a31515">&#34;+=&#34;</span>, res != NULL));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> res;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (m &amp;&amp; m-&gt;sq_concat) {
+</span></span><span style="display:flex;"><span>        PyObject *res = m-&gt;sq_concat(s, o);
+</span></span><span style="display:flex;"><span>        assert(_Py_CheckSlotResult(s, <span style="color:#a31515">&#34;+&#34;</span>, res != NULL));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> res;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (PySequence_Check(s) &amp;&amp; PySequence_Check(o)) {
+</span></span><span style="display:flex;"><span>        PyObject *result = BINARY_IOP1(s, o, NB_SLOT(nb_inplace_add),
+</span></span><span style="display:flex;"><span>                                       NB_SLOT(nb_add), <span style="color:#a31515">&#34;+=&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (result != Py_NotImplemented)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> result;
+</span></span><span style="display:flex;"><span>        Py_DECREF(result);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> type_error(<span style="color:#a31515">&#34;&#39;%.200s&#39; object can&#39;t be concatenated&#34;</span>, s);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="source-code---list-methods">Source Code - List Methods</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// https://github.com/python/cpython/blob/2ef73be891eb95064e268341e38e81d008add480/Objects/listobject.c#L2854
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> PySequenceMethods list_as_sequence = {
+</span></span><span style="display:flex;"><span>    (lenfunc)list_length,                       <span style="color:#008000">/* sq_length */</span>
+</span></span><span style="display:flex;"><span>    (binaryfunc)list_concat,                    <span style="color:#008000">/* sq_concat */</span>
+</span></span><span style="display:flex;"><span>    (ssizeargfunc)list_repeat,                  <span style="color:#008000">/* sq_repeat */</span>
+</span></span><span style="display:flex;"><span>    (ssizeargfunc)list_item,                    <span style="color:#008000">/* sq_item */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* sq_slice */</span>
+</span></span><span style="display:flex;"><span>    (ssizeobjargproc)list_ass_item,             <span style="color:#008000">/* sq_ass_item */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* sq_ass_slice */</span>
+</span></span><span style="display:flex;"><span>    (objobjproc)list_contains,                  <span style="color:#008000">/* sq_contains */</span>
+</span></span><span style="display:flex;"><span>    (binaryfunc)list_inplace_concat,            <span style="color:#008000">/* sq_inplace_concat */</span>
+</span></span><span style="display:flex;"><span>    (ssizeargfunc)list_inplace_repeat,          <span style="color:#008000">/* sq_inplace_repeat */</span>
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// https://github.com/python/cpython/blob/2ef73be891eb95064e268341e38e81d008add480/Objects/listobject.c#L510
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// binary operation
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>list_concat(PyListObject *a, PyObject *bb)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Py_ssize_t size;
+</span></span><span style="display:flex;"><span>    Py_ssize_t i;
+</span></span><span style="display:flex;"><span>    PyObject **src, **dest;
+</span></span><span style="display:flex;"><span>    PyListObject *np;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyList_Check(bb)) {
+</span></span><span style="display:flex;"><span>        PyErr_Format(PyExc_TypeError,
+</span></span><span style="display:flex;"><span>                  <span style="color:#a31515">&#34;can only concatenate list (not </span><span style="color:#a31515">\&#34;</span><span style="color:#a31515">%.200s</span><span style="color:#a31515">\&#34;</span><span style="color:#a31515">) to list&#34;</span>,
+</span></span><span style="display:flex;"><span>                  Py_TYPE(bb)-&gt;tp_name);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span><span style="color:#00f">#define b ((PyListObject *)bb)
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) &lt; PY_SSIZE_T_MAX);
+</span></span><span style="display:flex;"><span>    size = Py_SIZE(a) + Py_SIZE(b);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (size == 0) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyList_New(0);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    np = (PyListObject *) list_new_prealloc(size);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (np == NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    src = a-&gt;ob_item;
+</span></span><span style="display:flex;"><span>    dest = np-&gt;ob_item;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (i = 0; i &lt; Py_SIZE(a); i++) {
+</span></span><span style="display:flex;"><span>        PyObject *v = src[i];
+</span></span><span style="display:flex;"><span>        Py_INCREF(v);
+</span></span><span style="display:flex;"><span>        dest[i] = v;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    src = b-&gt;ob_item;
+</span></span><span style="display:flex;"><span>    dest = np-&gt;ob_item + Py_SIZE(a);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">for</span> (i = 0; i &lt; Py_SIZE(b); i++) {
+</span></span><span style="display:flex;"><span>        PyObject *v = src[i];
+</span></span><span style="display:flex;"><span>        Py_INCREF(v);
+</span></span><span style="display:flex;"><span>        dest[i] = v;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Py_SET_SIZE(np, size);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> (PyObject *)np;
+</span></span><span style="display:flex;"><span><span style="color:#00f">#undef b
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>}
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// https://github.com/python/cpython/blob/2ef73be891eb95064e268341e38e81d008add480/Objects/listobject.c#L990
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// in-place operation
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>list_inplace_concat(PyListObject *self, PyObject *other)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyObject *result;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    result = list_extend(self, other);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (result == NULL)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> result;
+</span></span><span style="display:flex;"><span>    Py_DECREF(result);
+</span></span><span style="display:flex;"><span>    Py_INCREF(self);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> (PyObject *)self;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="simulation---in-place-operation">Simulation - In-place operation</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#00f">def</span> BinaryOps(x, y):
+</span></span><span style="display:flex;"><span>	<span style="color:#008000"># x = x + y</span>
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">return</span> x + y
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">def</span> InPlaceOps(x, y):
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> type(x) != type(y):
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">raise</span> TypeError(<span style="color:#a31515">&#34;unsupport type&#34;</span>)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> hasattr(x, <span style="color:#a31515">&#34;extend&#34;</span>):
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> BinaryOps(x, y)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	f = getattr(x, <span style="color:#a31515">&#34;extend&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> <span style="color:#00f">not</span> isinstance(f, types.BuiltinFunctionType):
+</span></span><span style="display:flex;"><span>		<span style="color:#00f">return</span> BinaryOps(x, y)
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	x.extend(y)
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">return</span> x
+</span></span></code></pre></div><h2 id="python-bytecode-instructions">Python Bytecode Instructions</h2>
+<h3 id="disassembler">Disassembler</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f_binary_add():
+</span></span><span style="display:flex;"><span>...     x = y = 1
+</span></span><span style="display:flex;"><span>...     x = x + y
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; dis.dis(f_binary_add)
+</span></span><span style="display:flex;"><span>  2           0 LOAD_CONST               1 (1)
+</span></span><span style="display:flex;"><span>              2 DUP_TOP
+</span></span><span style="display:flex;"><span>              4 STORE_FAST               0 (x)
+</span></span><span style="display:flex;"><span>              6 STORE_FAST               1 (y)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  3           8 LOAD_FAST                0 (x)
+</span></span><span style="display:flex;"><span>             10 LOAD_FAST                1 (y)
+</span></span><span style="display:flex;"><span>             12 BINARY_ADD
+</span></span><span style="display:flex;"><span>             14 STORE_FAST               0 (x)
+</span></span><span style="display:flex;"><span>             16 LOAD_CONST               0 (<span style="color:#00f">None</span>)
+</span></span><span style="display:flex;"><span>             18 RETURN_VALUE
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f_inplace_add():
+</span></span><span style="display:flex;"><span>...     x = y = [1]
+</span></span><span style="display:flex;"><span>...     x += y
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; dis.dis(f_inplace_add)
+</span></span><span style="display:flex;"><span>  2           0 LOAD_CONST               1 (1)
+</span></span><span style="display:flex;"><span>              2 BUILD_LIST               1
+</span></span><span style="display:flex;"><span>              4 DUP_TOP
+</span></span><span style="display:flex;"><span>              6 STORE_FAST               0 (x)
+</span></span><span style="display:flex;"><span>              8 STORE_FAST               1 (y)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  3          10 LOAD_FAST                0 (x)
+</span></span><span style="display:flex;"><span>             12 LOAD_FAST                1 (y)
+</span></span><span style="display:flex;"><span>             14 INPLACE_ADD
+</span></span><span style="display:flex;"><span>             16 STORE_FAST               0 (x)
+</span></span><span style="display:flex;"><span>             18 LOAD_CONST               0 (<span style="color:#00f">None</span>)
+</span></span><span style="display:flex;"><span>             20 RETURN_VALUE
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span></code></pre></div><h3 id="example">Example</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f_binary_add():
+</span></span><span style="display:flex;"><span>...     x = y = [1]
+</span></span><span style="display:flex;"><span>...     print(x, y)
+</span></span><span style="display:flex;"><span>...     print(id(x), id(y))
+</span></span><span style="display:flex;"><span>...     x = x + y
+</span></span><span style="display:flex;"><span>...     print(x, y)
+</span></span><span style="display:flex;"><span>...     print(id(x), id(y))
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; f_binary_add()
+</span></span><span style="display:flex;"><span>([1], [1])
+</span></span><span style="display:flex;"><span>(58784776L, 58784776L)
+</span></span><span style="display:flex;"><span>([1, 1], [1])
+</span></span><span style="display:flex;"><span>(58784904L, 58784776L)
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f_inplace_add():
+</span></span><span style="display:flex;"><span>...     x = y = [1]
+</span></span><span style="display:flex;"><span>...     print(x, y)
+</span></span><span style="display:flex;"><span>...     print(id(x), id(y))
+</span></span><span style="display:flex;"><span>...     x += y
+</span></span><span style="display:flex;"><span>...     print(x, y)
+</span></span><span style="display:flex;"><span>...     print(id(x), id(y))
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; f_inplace_add()
+</span></span><span style="display:flex;"><span>([1], [1])
+</span></span><span style="display:flex;"><span>(58784776L, 58784776L)
+</span></span><span style="display:flex;"><span>([1, 1], [1, 1])
+</span></span><span style="display:flex;"><span>(58784776L, 58784776L)
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#008000"># type int not support in-place operation</span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f_inplace_add():
+</span></span><span style="display:flex;"><span>...     x = y = 1
+</span></span><span style="display:flex;"><span>...     print(x, y)
+</span></span><span style="display:flex;"><span>...     print(id(x), id(y))
+</span></span><span style="display:flex;"><span>...     x += y
+</span></span><span style="display:flex;"><span>...     print(x, y)
+</span></span><span style="display:flex;"><span>...     print(id(x), id(y))
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; f_inplace_add()
+</span></span><span style="display:flex;"><span>(1, 1)
+</span></span><span style="display:flex;"><span>(57040968L, 57040968L)
+</span></span><span style="display:flex;"><span>(2, 1)
+</span></span><span style="display:flex;"><span>(57040944L, 57040968L)
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span></code></pre></div><h2 id="references">References</h2>
+<ol>
+<li><a href="https://docs.python.org/3.8/library/dis.html">dis - Disassembler for Python bytecode</a></li>
+<li><a href="https://docs.python.org/3.8/library/operator.html#in-place-operators">in-place-operators</a></li>
+<li><a href="https://github.com/python/cpython/blob/2ef73be891eb95064e268341e38e81d008add480/Objects/listobject.c#L30">python list_resize</a></li>
+</ol>
+<!--
+4. [default-memory-allocators](https://docs.python.org/3.8/c-api/memory.html#default-memory-allocators)
+5. [celery-python-jemalloc](https://zapier.com/engineering/celery-python-jemalloc/)
+-->
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/python">python</a></li>
+							
+						</ul>
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>

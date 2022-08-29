@@ -7,7 +7,16 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Sat, 20 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>[Python] Difference Between Binary and In-place Operations</title>
+      <link>https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/</link>
+      <pubDate>Sun, 21 Aug 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/</guid>
+      <description>Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &amp;ldquo;pythonic&amp;rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&amp;rsquo;s current memory allocated and id() to checking whether object&amp;rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like + , - , * , / , % .</description>
+    </item>
+    
     <item>
       <title>HTTP Serving Compressed File</title>
       <link>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</link>
