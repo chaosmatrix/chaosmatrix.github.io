@@ -7,9 +7,18 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Sun, 21 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 28 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>[Python] Difference Between Binary and In-place Operations</title>
+      <title>[python] Internal Implementation of Type List</title>
+      <link>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_list/</link>
+      <pubDate>Sun, 28 Aug 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_list/</guid>
+      <description>Abstract The only way to shrink list without delete element is making a copy of the old one, like l = l[:len(l)] or a = l.copy() Large list might has lots of allocated but unused space Deleting element has an ability of shrinking list Metrics Operation Average Case Amortized Worst Case Increase Space Inplace Resize copy O(n) O(n) O(n) N I append O(1) O(1) O(1) Y I|- clear O(n) O(n) - Y D count O(n) O(n) - N - extend O(k) O(k) O(k) Y I|- index O(n) O(n) - N - insert O(n) O(n) O(1) Y I|- pop O(n) O(n) Y D|- remove O(n) O(n) Y D|- reverse O(n) O(n) Y - sort O(n log n) O(n log n) - Y - __add__ O(n + k) O(n + k) O(n + k) N I __iadd__ O(k) O(k) O(k) Y I- __mul__ O(n*k) O(n*k) O（n*k) N I __imul__ O(n*(k-1)) O(n*(k-1)) O(n*(k-1)) Y I- Comment:</description>
+    </item>
+    
+    <item>
+      <title>[python] Difference Between Binary and In-place Operations</title>
       <link>https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/</link>
       <pubDate>Sun, 21 Aug 2022 21:05:18 +0800</pubDate>
       
