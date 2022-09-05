@@ -6,7 +6,7 @@
 	<meta itemprop="name" content="[python] Internal Implementation of Type List">
 <meta itemprop="description" content="Abstract The only way to shrink list without delete element is making a copy of the old one, like l = l[:len(l)] or a = l.copy() Large list might has lots of allocated but unused space Deleting element has an ability of shrinking list Metrics Operation Average Case Amortized Worst Case Increase Space Inplace Resize copy O(n) O(n) O(n) N I append O(1) O(1) O(1) Y I|- clear O(n) O(n) - Y D count O(n) O(n) - N - extend O(k) O(k) O(k) Y I|- index O(n) O(n) - N - insert O(n) O(n) O(1) Y I|- pop O(n) O(n) Y D|- remove O(n) O(n) Y D|- reverse O(n) O(n) Y - sort O(n log n) O(n log n) - Y - __add__ O(n &#43; k) O(n &#43; k) O(n &#43; k) N I __iadd__ O(k) O(k) O(k) Y I- __mul__ O(n*k) O(n*k) O（n*k) N I __imul__ O(n*(k-1)) O(n*(k-1)) O(n*(k-1)) Y I- Comment:"><meta itemprop="datePublished" content="2022-08-28T21:05:18+08:00" />
 <meta itemprop="dateModified" content="2022-08-28T21:05:18+08:00" />
-<meta itemprop="wordCount" content="1280">
+<meta itemprop="wordCount" content="1613">
 <meta itemprop="keywords" content="python," /><meta property="og:title" content="[python] Internal Implementation of Type List" />
 <meta property="og:description" content="Abstract The only way to shrink list without delete element is making a copy of the old one, like l = l[:len(l)] or a = l.copy() Large list might has lots of allocated but unused space Deleting element has an ability of shrinking list Metrics Operation Average Case Amortized Worst Case Increase Space Inplace Resize copy O(n) O(n) O(n) N I append O(1) O(1) O(1) Y I|- clear O(n) O(n) - Y D count O(n) O(n) - N - extend O(k) O(k) O(k) Y I|- index O(n) O(n) - N - insert O(n) O(n) O(1) Y I|- pop O(n) O(n) Y D|- remove O(n) O(n) Y D|- reverse O(n) O(n) Y - sort O(n log n) O(n log n) - Y - __add__ O(n &#43; k) O(n &#43; k) O(n &#43; k) N I __iadd__ O(k) O(k) O(k) Y I- __mul__ O(n*k) O(n*k) O（n*k) N I __imul__ O(n*(k-1)) O(n*(k-1)) O(n*(k-1)) Y I- Comment:" />
 <meta property="og:type" content="article" />
@@ -237,12 +237,15 @@
 </li>
 <li>Increase Space: the number of elements that added after call the function, not the total number, and not the memory size
 <ul>
-<li>pop(k) / remove(x): use <strong>memmove</strong> and <strong>free</strong> delete element, <strong>memmove</strong> will copy  <strong>l[k+1:]</strong> to temporary memory area and then copy into <strong>l[k:]</strong></li>
+<li><strong>pop(k)</strong> / <strong>remove(x)</strong>: use <strong>memmove</strong> and <strong>free</strong> delete element, <strong>memmove</strong> will copy  <strong>l[k+1:]</strong> to temporary memory area and then copy into <strong>l[k:]</strong></li>
+<li><strong>pop(k)</strong>: <strong><code>O(1)</code></strong> ?, it use <strong>memmove</strong> to insert / delete element when k not the last index in list, performance depend on <strong>memmove</strong></li>
+<li><strong>remove(x)</strong>: <strong>O(n)</strong>, need to found the index of x in list first, then using <strong>memmove</strong> to delete element</li>
+<li><strong>clear()</strong>: <strong>O(n)</strong>, need to traverse all objects then free every one, <strong>release memory immediately</strong></li>
 </ul>
 </li>
 <li>Get Memory Usage
 <ol>
-<li>sys.getsizeof(object): object&rsquo;s size + garbage collector overhead (notmally, 16)</li>
+<li><strong>sys.getsizeof(object)</strong>: object&rsquo;s size + garbage collector overhead (notmally, 16)</li>
 <li><strong>object.__sizeof__()</strong>: object&rsquo;s size</li>
 </ol>
 </li>
@@ -256,9 +259,11 @@
 <hr>
 <p><strong>shrinking list by deleting elements:</strong></p>
 <ol>
-<li>function <code>remove(x)</code> and <code>pop(i)</code> , when i == 0, it has bad performance, and it&rsquo;s better to create new one</li>
+<li>function <code>remove(x)</code> and <code>pop(k)</code> , when i == 0, it has bad performance, and it&rsquo;s better to create new one</li>
 </ol>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python-3.10.6/Objects/listobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// algorithm about how list resize, include expansion and shrink
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
 </span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
 </span></span><span style="display:flex;"><span>list_resize(PyListObject *self, Py_ssize_t newsize)
@@ -303,7 +308,13 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><hr>
+<p><strong>Notice:</strong></p>
+<ol>
+<li><strong>list.remove(x)</strong> / <strong>list.pop(k)</strong> internal implementation</li>
+<li><strong>l[i:j] = a</strong> (a is list object) internal implementation</li>
+</ol>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python-3.10.6/Objects/listobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
 </span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
 </span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
 </span></span><span style="display:flex;"><span>list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
@@ -478,6 +489,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> (PyObject *) op;
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><hr>
+<p><strong>Test: Python List Resize</strong></p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#008000"># list_preallocate_exact</span>
 </span></span><span style="display:flex;"><span>&gt;&gt;&gt; l = []
 </span></span><span style="display:flex;"><span>&gt;&gt;&gt; l.extend([1,2,3])
@@ -530,9 +542,59 @@
 </span></span><span style="display:flex;"><span>88
 </span></span><span style="display:flex;"><span>&gt;&gt;&gt;
 </span></span></code></pre></div><hr>
-<h3 id="faq">FAQ</h3>
-<p>Q: difference with <code>list.clear()</code> ,  l = l[i:i], l = [] <br>
-A: <code>list.clear()</code> equal with <code>l = l[i:i]</code>, memory will be free immedialy, <code>l = []</code> is creating new one and let the old one recycle by GC. so, <code>l = []</code> has better performance, because it recycle object in background.</p>
+<p><strong>Simulation: How List Delete Element:</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>nums = [1,2,3,4,5,6]
+</span></span><span style="display:flex;"><span>i = 0
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> j <span style="color:#00f">in</span> range(len(nums)): <span style="color:#008000"># all of done by memmove</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> nums[j] != 4:
+</span></span><span style="display:flex;"><span>        nums[i] = nums[j]
+</span></span><span style="display:flex;"><span>        i = i + 1
+</span></span><span style="display:flex;"><span>    nums = nums[:i]
+</span></span></code></pre></div><h2 id="real-world-python">Real World Python</h2>
+<h3 id="common-bug-in-range-delete-element">Common Bug in Range Delete Element</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># P. IndexError: list index out of range</span>
+</span></span><span style="display:flex;"><span>nums = [1,2,3,4,5,6]
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> i <span style="color:#00f">in</span> range(len(nums)):
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> nums[i] == 9:
+</span></span><span style="display:flex;"><span>        nums.pop(i)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000"># P. skip check some element</span>
+</span></span><span style="display:flex;"><span>nums = [1,2,3,4,4,5,6]
+</span></span><span style="display:flex;"><span><span style="color:#008000"># output: [1,2,3,4,5,6]</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> v <span style="color:#00f">in</span> nums:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> v == 4:
+</span></span><span style="display:flex;"><span>        nums.remove(v)
+</span></span></code></pre></div><h3 id="remove-element-in-range-safely">Remove Element in Range Safely</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#008000"># remove element in range safely</span>
+</span></span><span style="display:flex;"><span>nums = [1,2,3,4,5,6]
+</span></span><span style="display:flex;"><span>i = 0
+</span></span><span style="display:flex;"><span><span style="color:#00f">while</span> i &lt; len(nums):
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> nums[i] == 4:
+</span></span><span style="display:flex;"><span>        nums.pop(i)
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span>:
+</span></span><span style="display:flex;"><span>        i = i + 1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000"># best way to remove element in range</span>
+</span></span><span style="display:flex;"><span>nums = [1,2,3,4,5,6]
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> i <span style="color:#00f">in</span> range(len(nums) - 1, -1, -1):
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> nums[i] == 4:
+</span></span><span style="display:flex;"><span>        nums.pop(i)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000"># P. too many Load / Store ops cause bad performance (&gt; 0.5x slower)</span>
+</span></span><span style="display:flex;"><span>nums = [1,2,3,4,5,6]
+</span></span><span style="display:flex;"><span>i = 0
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> j <span style="color:#00f">in</span> range(len(nums)):
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> nums[j] != 4:
+</span></span><span style="display:flex;"><span>        nums[i] = nums[j]
+</span></span><span style="display:flex;"><span>        i = i + 1
+</span></span><span style="display:flex;"><span>    <span style="color:#008000"># result is nums[:i]</span>
+</span></span></code></pre></div><h2 id="faq">FAQ</h2>
+<p>Q: Difference between <strong><code>list.clear()</code></strong>  and <strong><code>l = []</code></strong> <br>
+A: Two of them are free memory by setting item as <strong>empty list []</strong>, but <strong><code>list.clear()</code></strong> will looping and free all PyObjects, and memory will be relased immedialy (when function call), <strong><code>l = []</code></strong>  is making ListObject unreachable and let it recycle by GC in background.</p>
+<hr>
+<p>Q: Difference between <strong>listobject (list type)</strong> and <strong>arraymodule (array type)</strong> ?<br>
+A: Arrays are sequence types and behave very much like lists, except that the type of objects stored in them is constrained. Also, they use different resize algorithm, and <strong>ArrayModule</strong> require less memory than <strong>ListObject</strong> when has same number of objects.</p>
 <h2 id="references">References</h2>
 <ol>
 <li><a href="https://docs.python.org/3.8/library/dis.html">dis - Disassembler for Python bytecode</a></li>
@@ -541,6 +603,8 @@ A: <code>list.clear()</code> equal with <code>l = l[i:i]</code>, memory will be 
 <li><a href="https://wiki.python.org/moin/PythonSpeed/PerformanceTips">python - PerformanceTips</a></li>
 <li><a href="https://linux.die.net/man/3/realloc">linux - realloc</a></li>
 <li><a href="https://linux.die.net/man/3/memmove">linux - memmove</a></li>
+<li><a href="https://github.com/nasrat-v/asm_minilibc/blob/master/memmove.s#L6">minilibc - the asm simulation of memmove</a></li>
+<li><a href="https://docs.python.org/3/library/array.html">python3 - array</a></li>
 </ol>
 
 			</div>
