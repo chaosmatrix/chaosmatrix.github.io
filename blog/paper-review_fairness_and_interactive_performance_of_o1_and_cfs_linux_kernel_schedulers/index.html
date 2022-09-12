@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[paper review] Fairness and Interactive Performance of O(1) and CFS Linux Kernel Schedulerss - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="[paper review] Fairness and Interactive Performance of O(1) and CFS Linux Kernel Schedulerss">
+<meta itemprop="description" content="Abstract For both medium and high load, CFS has higher average latency (5ms ~ 10ms) than O(1). The greater the load, the greater average latency. CFS parameters also has an impact on the average / tail latency. The nice value also has impact of CFS. The lower nice value, the greater time slice. The nice value also has impact of O(1). Review paper: Fairness and interactive performance of O(1) and CFS Linux kernel schedulers"><meta itemprop="datePublished" content="2022-09-01T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-09-01T21:05:18+08:00" />
+<meta itemprop="wordCount" content="789">
+<meta itemprop="keywords" content="paper-review,linux," /><meta property="og:title" content="[paper review] Fairness and Interactive Performance of O(1) and CFS Linux Kernel Schedulerss" />
+<meta property="og:description" content="Abstract For both medium and high load, CFS has higher average latency (5ms ~ 10ms) than O(1). The greater the load, the greater average latency. CFS parameters also has an impact on the average / tail latency. The nice value also has impact of CFS. The lower nice value, the greater time slice. The nice value also has impact of O(1). Review paper: Fairness and interactive performance of O(1) and CFS Linux kernel schedulers" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/paper-review_fairness_and_interactive_performance_of_o1_and_cfs_linux_kernel_schedulers/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-09-01T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-09-01T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="[paper review] Fairness and Interactive Performance of O(1) and CFS Linux Kernel Schedulerss"/>
+<meta name="twitter:description" content="Abstract For both medium and high load, CFS has higher average latency (5ms ~ 10ms) than O(1). The greater the load, the greater average latency. CFS parameters also has an impact on the average / tail latency. The nice value also has impact of CFS. The lower nice value, the greater time slice. The nice value also has impact of O(1). Review paper: Fairness and interactive performance of O(1) and CFS Linux kernel schedulers"/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">01</span>
+							<span class="rest">Sep 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">[paper review] Fairness and Interactive Performance of O(1) and CFS Linux Kernel Schedulerss</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  },
+  svg: {
+    fontCache: 'global'
+  }
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="/js/mathjax-v3-es5-tex-svg.js">
+</script>
+<h2 id="abstract">Abstract</h2>
+<ol>
+<li>For both medium and high load, <strong>CFS</strong> has higher average latency (5ms ~ 10ms) than <strong>O(1)</strong>.</li>
+<li>The greater the load, the greater average latency.</li>
+<li>CFS parameters also has an impact on the average / tail latency.</li>
+<li>The nice value also has impact of CFS. The lower nice value, the greater time slice.</li>
+<li>The nice value also has impact of <strong>O(1)</strong>.</li>
+</ol>
+<h2 id="review">Review</h2>
+<p>paper: <a href="https://ieeexplore.ieee.org/document/4631872">Fairness and interactive performance of O(1) and CFS Linux kernel schedulers</a></p>
+<p>The testing result is base on the workload of linux desktop, not the workload of server.</p>
+<hr>
+<blockquote>
+<p>The design goals of CFS are to provide fair CPU resource allocation among executing tasks without sacrificing interactive performance.</p>
+</blockquote>
+<p><strong>O(1)</strong></p>
+<blockquote>
+<p>&hellip; static priorities corresponds to a nice value &hellip; from -20 (highest) to 19 (lowest) &hellip;</p>
+</blockquote>
+<blockquote>
+<p>Each task is allocated a base time slice based on its static priority/nice value using the equation:</p>
+</blockquote>
+<div>
+<p>$$\begin{align*}
+\large
+Base \space Time \space Slice \space (ms) \space = \lbrace_{if \space static \space priority \space \geqslant \space 120 \space (140-static \space priority) \space \times \space 5}^{if \space static \space priority \space &lt; \space 120 \space (140-static \space priority) \space \times \space 20}
+\end{align*}$$</p>
+</div>
+<p><strong>CFS</strong></p>
+<blockquote>
+<p>&hellip; was designed to provide good interactive performance while maximizing overall CPU utilization. Even during high load, the interactivity shall be maintained.</p>
+</blockquote>
+<p><strong>Fairness Test and Result</strong></p>
+<blockquote>
+<p>In the O(1) scheduler, some children finish executing faster than others.</p>
+</blockquote>
+<blockquote>
+<p>&hellip; CFS scheduler distributes its CPU time among each tasks in a fairer manner compared to O(1) scheduler.</p>
+</blockquote>
+<p><strong>Interactivity Test and Result</strong></p>
+<blockquote>
+<p>For both medium and high load, the interactive task has lower latencies when running on O(1). Although CFS has higher average latency, the latency is well below human’s reaction time to visual stimulus, which is 180 to 200ms.</p>
+</blockquote>
+<blockquote>
+<p>CFS scheduler has lower maximum latency recorded in all three types of background loads.</p>
+</blockquote>
+<hr>
+<h2 id="in-real-work">In Real Work</h2>
+<h3 id="basic">Basic</h3>
+<h5 id="1-cfs-parameters">1. CFS parameters</h5>
+<ul>
+<li><strong>cpu.cfs_period_us:</strong> the length of period</li>
+<li><strong>cpu.cfs_quota_us:</strong> run-time within period</li>
+<li><strong>cpu.cfs_burst_us:</strong> maximum accumulated run-time</li>
+</ul>
+<h5 id="2-cfs-throttling-statistics">2. CFS Throttling Statistics</h5>
+<ul>
+<li><strong>cpu.stat.nr_periods:</strong> Number of enforcement intervals that have elapsed.</li>
+<li><strong>cpu.stat.nr_throttled:</strong> Number of times the group has been throttled/limited.</li>
+<li><strong>cpu.stat.throttled_time:</strong> The total time duration (in nanoseconds) for which entities of the group have been throttled.</li>
+<li><strong>cpu.stat.nr_bursts:</strong> Number of periods burst occurs.</li>
+<li><strong>cpu.stat.burst_time:</strong> Cumulative wall-time (in nanoseconds) that any CPUs has used above quota in respective periods.</li>
+</ul>
+<h5 id="3-how-cfs-work">3. How CFS Work</h5>
+<p><strong>Pseudocode How CFS Work (without cpu.cfs_burst_us):</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f"># simulate a process executing under CFS
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">while</span> process_need_cpu_us &gt; 0 {
+</span></span><span style="display:flex;"><span>	process_need_cpu_us -= cpu.cfs_quota_us
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> process_need_cpu_us &gt; 0 {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># cfs cpu.stat
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		cpu.stat.nr_periods++
+</span></span><span style="display:flex;"><span>		cpu.stat.nr_throttled++
+</span></span><span style="display:flex;"><span>		cpu.stat.throttled_time += (cpu.cfs_period_us - cpu.cfs_quota_us) * 1000
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># wait next period
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		sleep(cpu.cfs_period_us - cpu.cfs_quota_us)
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>Pseudocode How CFS Work (with cpu.cfs_burst_us):</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#00f"># simulate a process executing under CFS
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>
+</span></span><span style="display:flex;"><span>curr_cpu.cfs_burst_us = cpu.cfs_quota_us
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">while</span> process_need_cpu_us &gt; 0 {
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	process_need_cpu_us -= cpu.cfs_quota_us
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> process_need_cpu_us &gt; 0 &amp;&amp; curr_cpu.cfs_burst_us &gt; cpu.cfs_quota_us {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># trigger burst
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		process_need_cpu_us -= (curr_cpu.cfs_burst_us - cpu.cfs_quota_us)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># cpu.stat burst
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		cpu.stat.nr_bursts++
+</span></span><span style="display:flex;"><span>		cpu.stat.burst_time += curr_cpu.cfs_burst_us - cpu.cfs_quota_us
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#00f">if</span> process_need_cpu_us &lt; 0 {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># reset
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		curr_cpu.cfs_burst_us = cpu.cfs_quota_us
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># accumulate unused quota into curr_cpu.cfs_burst_us
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		curr_cpu.cfs_burst_us = min(cpu.cfs_burst_us, curr_cpu.cfs_burst_us - process_need_cpu_us)
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>	} <span style="color:#00f">else</span> <span style="color:#00f">if</span> process_need_cpu_us &gt; 0 {
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># cpu.stat
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		cpu.stat.nr_periods++
+</span></span><span style="display:flex;"><span>		cpu.stat.nr_throttled++
+</span></span><span style="display:flex;"><span>		cpu.stat.throttled_time += (cpu.cfs_period_us - cpu.cfs_quota_us) * 1000
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		<span style="color:#00f"># wait next period
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>		sleep(cpu.cfs_period_us - max(cpu.cfs_quota_us, curr_cpu.cfs_burst_us))
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="workload">Workload</h3>
+<h5 id="1-decrease-burst-workload-latency">1. Decrease Burst Workload Latency</h5>
+<ul>
+<li>increase both value but keep <em><strong>cpu.cfs_quota_us / cpu.cfs_period_us</strong></em> unchange, more tasks can be completed in one cpu.cfs_period_us</li>
+<li>use <strong>cpu.cfs_burst_us</strong> (linux kernel &gt;= 5.14), usable only when there are some unused quota from previous periods (unused quota can be keep &lt;= cpu.cfs_burst_us - cpu.cfs_quota_us)</li>
+<li>give up <strong>CFS</strong>, using <strong>cpuset</strong> (cpu affinity) to limit cpu usage [<a href="https://www.uber.com/blog/avoiding-cpu-throttling-in-a-containerized-environment/">uber blog - avoiding-cpu-throttling-in-a-containerized-environment</a>]</li>
+</ul>
+<h5 id="2-load-balancing-on-cloud-containers">2. Load Balancing On Cloud (Containers)</h5>
+<ul>
+<li><strong>least connections</strong> should be the first choice algorithm for load balancing gateway</li>
+<li>when used <strong>least connections</strong> to do load balancing, <strong>the large ratio that the server oversolded, the less resource (cpu) usage show</strong> (because of <strong>cpu throttling</strong>)</li>
+</ul>
+<h3 id="dashboard--monitor--alert-metrics">Dashboard &amp;&amp; Monitor &amp;&amp; Alert Metrics</h3>
+<h5 id="1-cfs-metrics">1. CFS Metrics</h5>
+<ul>
+<li><strong>cpu.stat.nr_periods</strong></li>
+<li><strong>cpu.stat.nr_throttled</strong></li>
+<li><strong>cpu.stat.throttled_time</strong></li>
+<li><strong>cpu.stat.nr_bursts</strong></li>
+<li><strong>cpu.stat.burst_time</strong></li>
+</ul>
+<p><strong>Get CPU Throttled Stat:</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>root@-:~# cat /sys/fs/cgroup/cpu/cpu.stat
+</span></span><span style="display:flex;"><span>nr_periods 0
+</span></span><span style="display:flex;"><span>nr_throttled 0
+</span></span><span style="display:flex;"><span>throttled_time 0
+</span></span></code></pre></div><h5 id="2-business-indicators">2. Business Indicators</h5>
+<ul>
+<li>P95/P99 lantency of given API</li>
+<li>latency between all deployed servers</li>
+</ul>
+<p><strong>Warning:</strong></p>
+<ul>
+<li>the greater the <strong>cpu.stat.nr_throttled</strong>, the greater the tail latency</li>
+</ul>
+<h5 id="3-elk-dashboard-metrics">3. ELK Dashboard Metrics</h5>
+<ul>
+<li>using histogram displays the number of requests handled by each server over a specified time period</li>
+<li>using histogram displays the average time about the handled requests of each server over a specified time period (average latency between servers)</li>
+</ul>
+<h2 id="references">References</h2>
+<ol>
+<li><a href="https://ieeexplore.ieee.org/document/4631872">Fairness and interactive performance of O(1) and CFS Linux kernel schedulers</a></li>
+<li><a href="https://github.com/torvalds/linux/commit/512ac999d2755d2b7109e996a76b6fb8b888631d">linux kernel - cfs cpu throttling even in low cpu usage &lt; 4.18</a></li>
+<li><a href="https://github.com/torvalds/linux/commit/f4183717b370ad28dd0c0d74760142b20e6e7931">linux kernel - cfs cpu.cfs_burst_us &gt;= 5.14</a></li>
+<li><a href="https://lwn.net/ml/linux-kernel/20210202114038.64870-1-changhuaixin@linux.alibaba.com/">linux kernel - cpu.cfs_burst_us benchmark compare</a></li>
+<li><a href="https://www.kernel.org/doc/html/latest/scheduler/sched-bwc.html">linux kernel - scheduler cfs</a></li>
+<li><a href="https://www.uber.com/blog/vertical-cpu-scaling/">uber blog - vertical-cpu-scaling</a></li>
+<li><a href="https://www.uber.com/blog/avoiding-cpu-throttling-in-a-containerized-environment/">uber blog - avoiding-cpu-throttling-in-a-containerized-environment</a></li>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/67577#issuecomment-466609030">kubernetes issue - CFS unnecessary throttling</a></li>
+<li><a href="https://jaanhio.me/blog/kubernetes-cpu-requests-limits/">kubernetes - kubernetes-cpu-requests-limits</a></li>
+</ol>
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/paper-review">paper-review</a></li>
+							
+							<li><a href="/tags/linux">linux</a></li>
+							
+						</ul>
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>

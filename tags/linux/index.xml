@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>linux on Chaosmatrix</title>
+    <link>https://chaosmatrix.github.io/tags/linux/</link>
+    <description>Recent content in linux on Chaosmatrix</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Copyright chaosmatrix</copyright>
+    <lastBuildDate>Thu, 01 Sep 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/linux/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>[paper review] Fairness and Interactive Performance of O(1) and CFS Linux Kernel Schedulerss</title>
+      <link>https://chaosmatrix.github.io/blog/paper-review_fairness_and_interactive_performance_of_o1_and_cfs_linux_kernel_schedulers/</link>
+      <pubDate>Thu, 01 Sep 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/paper-review_fairness_and_interactive_performance_of_o1_and_cfs_linux_kernel_schedulers/</guid>
+      <description>Abstract For both medium and high load, CFS has higher average latency (5ms ~ 10ms) than O(1). The greater the load, the greater average latency. CFS parameters also has an impact on the average / tail latency. The nice value also has impact of CFS. The lower nice value, the greater time slice. The nice value also has impact of O(1). Review paper: Fairness and interactive performance of O(1) and CFS Linux kernel schedulers</description>
+    </item>
+    
+  </channel>
+</rss>
