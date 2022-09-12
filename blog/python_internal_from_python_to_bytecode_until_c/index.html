@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[python internal] From Python to Bytecode until C - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="[python internal] From Python to Bytecode until C">
+<meta itemprop="description" content="Abstract Use module dis to get the minimize assembly code. Found the entry from Python/ceval.c with the bytecode that disassembled before. Now the door is open and the road is at your feet. Python -&gt; Bytecode -&gt; C Vesion: Python-3.10.6
+1. Example - Python &gt;&gt;&gt; def f(): ... d = {} ... d[1] = 1 ... 2. Python -&gt; Bytecode &gt;&gt;&gt; import dis &gt;&gt;&gt; &gt;&gt;&gt; def f(): ... d = {} ."><meta itemprop="datePublished" content="2022-09-03T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-09-03T21:05:18+08:00" />
+<meta itemprop="wordCount" content="1343">
+<meta itemprop="keywords" content="python,python-internal," /><meta property="og:title" content="[python internal] From Python to Bytecode until C" />
+<meta property="og:description" content="Abstract Use module dis to get the minimize assembly code. Found the entry from Python/ceval.c with the bytecode that disassembled before. Now the door is open and the road is at your feet. Python -&gt; Bytecode -&gt; C Vesion: Python-3.10.6
+1. Example - Python &gt;&gt;&gt; def f(): ... d = {} ... d[1] = 1 ... 2. Python -&gt; Bytecode &gt;&gt;&gt; import dis &gt;&gt;&gt; &gt;&gt;&gt; def f(): ... d = {} ." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/python_internal_from_python_to_bytecode_until_c/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-09-03T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-09-03T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="[python internal] From Python to Bytecode until C"/>
+<meta name="twitter:description" content="Abstract Use module dis to get the minimize assembly code. Found the entry from Python/ceval.c with the bytecode that disassembled before. Now the door is open and the road is at your feet. Python -&gt; Bytecode -&gt; C Vesion: Python-3.10.6
+1. Example - Python &gt;&gt;&gt; def f(): ... d = {} ... d[1] = 1 ... 2. Python -&gt; Bytecode &gt;&gt;&gt; import dis &gt;&gt;&gt; &gt;&gt;&gt; def f(): ... d = {} ."/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">03</span>
+							<span class="rest">Sep 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">[python internal] From Python to Bytecode until C</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<h2 id="abstract">Abstract</h2>
+<ol>
+<li>Use module <strong>dis</strong> to get the minimize assembly code.</li>
+<li>Found the entry from <strong>Python/ceval.c</strong> with the bytecode that disassembled before.</li>
+<li>Now the door is open and the road is at your feet.</li>
+</ol>
+<h2 id="python---bytecode---c">Python -&gt; Bytecode -&gt; C</h2>
+<p>Vesion: <strong>Python-3.10.6</strong></p>
+<h3 id="1-example---python">1. Example - Python</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f():
+</span></span><span style="display:flex;"><span>...     d = {}
+</span></span><span style="display:flex;"><span>...     d[1] = 1
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><h3 id="2-python---bytecode">2. Python -&gt; Bytecode</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">import</span> dis
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">def</span> f():
+</span></span><span style="display:flex;"><span>...     d = {}
+</span></span><span style="display:flex;"><span>...     d[1] = 1
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; dis.dis(f)
+</span></span><span style="display:flex;"><span>  2           0 BUILD_MAP                0
+</span></span><span style="display:flex;"><span>              2 STORE_FAST               0 (d)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  3           4 LOAD_CONST               1 (1)
+</span></span><span style="display:flex;"><span>              6 LOAD_FAST                0 (d)
+</span></span><span style="display:flex;"><span>              8 LOAD_CONST               1 (1)
+</span></span><span style="display:flex;"><span>             10 STORE_SUBSCR
+</span></span><span style="display:flex;"><span>             12 LOAD_CONST               0 (<span style="color:#00f">None</span>)
+</span></span><span style="display:flex;"><span>             14 RETURN_VALUE
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span></code></pre></div><h3 id="3-bytecode---c">3. Bytecode -&gt; C</h3>
+<h5 id="30-bytecode-entry-function">3.0 bytecode entry function</h5>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// All bytecode&#39;s entries are in Python/ceval.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject* _Py_HOT_FUNCTION
+</span></span><span style="display:flex;"><span>_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, <span style="color:#2b91af">int</span> throwflag)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    _Py_EnsureTstateNotNULL(tstate);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h5 id="31-build_map">3.1 BUILD_MAP</h5>
+<p>bytecode: <em>BUILD_MAP                0</em>
+python: <em>d = {}</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python/ceval.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// opcode = BUILD_MAP
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// oparg = 0
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject* _Py_HOT_FUNCTION
+</span></span><span style="display:flex;"><span>_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, <span style="color:#2b91af">int</span> throwflag)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    _Py_EnsureTstateNotNULL(tstate);
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode) {
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> TARGET(BUILD_MAP): {
+</span></span><span style="display:flex;"><span>            Py_ssize_t i;
+</span></span><span style="display:flex;"><span>            PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (map == NULL)
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">goto</span> error;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">for</span> (i = oparg; i &gt; 0; i--) {
+</span></span><span style="display:flex;"><span>                <span style="color:#2b91af">int</span> err;
+</span></span><span style="display:flex;"><span>                PyObject *key = PEEK(2*i);
+</span></span><span style="display:flex;"><span>                PyObject *value = PEEK(2*i - 1);
+</span></span><span style="display:flex;"><span>                err = PyDict_SetItem(map, key, value);
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">if</span> (err != 0) {
+</span></span><span style="display:flex;"><span>                    Py_DECREF(map);
+</span></span><span style="display:flex;"><span>                    <span style="color:#00f">goto</span> error;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">while</span> (oparg--) {
+</span></span><span style="display:flex;"><span>                Py_DECREF(POP());
+</span></span><span style="display:flex;"><span>                Py_DECREF(POP());
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            PUSH(map);
+</span></span><span style="display:flex;"><span>            DISPATCH();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// create a dict object
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject *
+</span></span><span style="display:flex;"><span>_PyDict_NewPresized(Py_ssize_t minused)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> Py_ssize_t max_presize = 128 * 1024;
+</span></span><span style="display:flex;"><span>    Py_ssize_t newsize;
+</span></span><span style="display:flex;"><span>    PyDictKeysObject *new_keys;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (minused &lt;= USABLE_FRACTION(PyDict_MINSIZE)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyDict_New();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* There are no strict guarantee that returned dict can contain minused
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * items without resize.  So we create medium size dict instead of very
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * large dict or MemoryError.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (minused &gt; USABLE_FRACTION(max_presize)) {
+</span></span><span style="display:flex;"><span>        newsize = max_presize;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>        newsize = estimate_keysize(minused);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    new_keys = new_keys_object(newsize);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (new_keys == NULL)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> new_dict(new_keys, NULL);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h5 id="32-store_fast">3.2 STORE_FAST</h5>
+<p>bytecode: <em>STORE_FAST               0 (d)</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python/ceval.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// give a variable name for the new created object
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject* _Py_HOT_FUNCTION
+</span></span><span style="display:flex;"><span>_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, <span style="color:#2b91af">int</span> throwflag)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    _Py_EnsureTstateNotNULL(tstate);
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode) {
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> TARGET(STORE_FAST): {
+</span></span><span style="display:flex;"><span>            PREDICTED(STORE_FAST);
+</span></span><span style="display:flex;"><span>            PyObject *value = POP();
+</span></span><span style="display:flex;"><span>            SETLOCAL(oparg, value);
+</span></span><span style="display:flex;"><span>            DISPATCH();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h5 id="33-load_const">3.3 LOAD_CONST</h5>
+<p>bytecode: <em>LOAD_CONST               1 (1)</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python/ceval.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// Pushes `co_consts[consti]` onto the stack.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject* _Py_HOT_FUNCTION
+</span></span><span style="display:flex;"><span>_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, <span style="color:#2b91af">int</span> throwflag)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    _Py_EnsureTstateNotNULL(tstate);
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode) {
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> TARGET(LOAD_CONST): {
+</span></span><span style="display:flex;"><span>            PREDICTED(LOAD_CONST);
+</span></span><span style="display:flex;"><span>            PyObject *value = GETITEM(consts, oparg);
+</span></span><span style="display:flex;"><span>            Py_INCREF(value);
+</span></span><span style="display:flex;"><span>            PUSH(value);
+</span></span><span style="display:flex;"><span>            DISPATCH();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h5 id="34-load_fast">3.4 LOAD_FAST</h5>
+<p>bytecode: <em>LOAD_FAST                0 (d)</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python/ceval.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// Pushes a reference to the local `co_varnames[var_num]` onto the stack.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject* _Py_HOT_FUNCTION
+</span></span><span style="display:flex;"><span>_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, <span style="color:#2b91af">int</span> throwflag)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    _Py_EnsureTstateNotNULL(tstate);
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode) {
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> TARGET(LOAD_FAST): {
+</span></span><span style="display:flex;"><span>            PyObject *value = GETLOCAL(oparg);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (value == NULL) {
+</span></span><span style="display:flex;"><span>                format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+</span></span><span style="display:flex;"><span>                                     UNBOUNDLOCAL_ERROR_MSG,
+</span></span><span style="display:flex;"><span>                                     PyTuple_GetItem(co-&gt;co_varnames, oparg));
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">goto</span> error;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            Py_INCREF(value);
+</span></span><span style="display:flex;"><span>            PUSH(value);
+</span></span><span style="display:flex;"><span>            DISPATCH();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h5 id="35-store_subscr">3.5 STORE_SUBSCR</h5>
+<p>bytecode: <em>STORE_SUBSCR</em></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>  3           4 LOAD_CONST               1 (1) // TOS = 1
+</span></span><span style="display:flex;"><span>              6 LOAD_FAST                0 (d) // TOS1 = d
+</span></span><span style="display:flex;"><span>              8 LOAD_CONST               1 (1) // TOS2 = 1
+</span></span><span style="display:flex;"><span>             10 STORE_SUBSCR                   // TOS1[TOS] = TOS2 =&gt; d[1] = 1
+</span></span></code></pre></div><hr>
+<p>Chain: _PyEval_EvalFrameDefault -&gt; PyObject_SetItem -&gt; dict_ass_sub -&gt; PyDict_SetItem -&gt; insertdict</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Python/ceval.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// Implements `TOS1[TOS] = TOS2`.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject* _Py_HOT_FUNCTION
+</span></span><span style="display:flex;"><span>_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, <span style="color:#2b91af">int</span> throwflag)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    _Py_EnsureTstateNotNULL(tstate);
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">switch</span> (opcode) {
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">case</span> TARGET(STORE_SUBSCR): {
+</span></span><span style="display:flex;"><span>            PyObject *sub = TOP();
+</span></span><span style="display:flex;"><span>            PyObject *container = SECOND();
+</span></span><span style="display:flex;"><span>            PyObject *v = THIRD();
+</span></span><span style="display:flex;"><span>            <span style="color:#2b91af">int</span> err;
+</span></span><span style="display:flex;"><span>            STACK_SHRINK(3);
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">/* container[sub] = v */</span>
+</span></span><span style="display:flex;"><span>            err = PyObject_SetItem(container, sub, v);
+</span></span><span style="display:flex;"><span>            Py_DECREF(v);
+</span></span><span style="display:flex;"><span>            Py_DECREF(container);
+</span></span><span style="display:flex;"><span>            Py_DECREF(sub);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (err != 0)
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">goto</span> error;
+</span></span><span style="display:flex;"><span>            DISPATCH();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>		
+</span></span><span style="display:flex;"><span>		...
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/abstract.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// abstract function implement SetItem, container[k] = v
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// type(container) is dict or list
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (o == NULL || key == NULL || value == NULL) {
+</span></span><span style="display:flex;"><span>        null_error();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// Annotation:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	<span style="color:#008000">// 1. check object is mapping object or not, like dict()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    PyMappingMethods *m = Py_TYPE(o)-&gt;tp_as_mapping;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (m &amp;&amp; m-&gt;mp_ass_subscript) {
+</span></span><span style="display:flex;"><span>        <span style="color:#2b91af">int</span> res = m-&gt;mp_ass_subscript(o, key, value);
+</span></span><span style="display:flex;"><span>        assert(_Py_CheckSlotResult(o, <span style="color:#a31515">&#34;__setitem__&#34;</span>, res &gt;= 0));
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> res;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#008000">// Annotation:
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>	<span style="color:#008000">// 1. check object is sequence object or not, like list()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">if</span> (Py_TYPE(o)-&gt;tp_as_sequence) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (_PyIndex_Check(key)) {
+</span></span><span style="display:flex;"><span>            Py_ssize_t key_value;
+</span></span><span style="display:flex;"><span>            key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (key_value == -1 &amp;&amp; PyErr_Occurred())
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> PySequence_SetItem(o, key_value, value);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span> <span style="color:#00f">if</span> (Py_TYPE(o)-&gt;tp_as_sequence-&gt;sq_ass_item) {
+</span></span><span style="display:flex;"><span>            type_error(<span style="color:#a31515">&#34;sequence index must be &#34;</span>
+</span></span><span style="display:flex;"><span>                       <span style="color:#a31515">&#34;integer, not &#39;%.200s&#39;&#34;</span>, key);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    type_error(<span style="color:#a31515">&#34;&#39;%.200s&#39; object does not support item assignment&#34;</span>, o);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// include/object.h
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// define all attrs that the typeObject supported
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#008000">/* PyTypeObject structure is defined in cpython/object.h.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">   In Py_LIMITED_API, PyTypeObject is an opaque structure. */</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">typedef</span> <span style="color:#00f">struct</span> _typeobject PyTypeObject;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// include/cpython/object.h
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// If this structure is modified, Doc/includes/typestruct.h should be updated
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// as well.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">struct</span> _typeobject {
+</span></span><span style="display:flex;"><span>    PyObject_VAR_HEAD
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">char</span> *tp_name; <span style="color:#008000">/* For printing, in format &#34;&lt;module&gt;.&lt;name&gt;&#34; */</span>
+</span></span><span style="display:flex;"><span>    Py_ssize_t tp_basicsize, tp_itemsize; <span style="color:#008000">/* For allocation */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Methods to implement standard operations */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    destructor tp_dealloc;
+</span></span><span style="display:flex;"><span>    Py_ssize_t tp_vectorcall_offset;
+</span></span><span style="display:flex;"><span>    getattrfunc tp_getattr;
+</span></span><span style="display:flex;"><span>    setattrfunc tp_setattr;
+</span></span><span style="display:flex;"><span>    PyAsyncMethods *tp_as_async; <span style="color:#008000">/* formerly known as tp_compare (Python 2)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">                                    or tp_reserved (Python 3) */</span>
+</span></span><span style="display:flex;"><span>    reprfunc tp_repr;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Method suites for standard classes */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    PyNumberMethods *tp_as_number;
+</span></span><span style="display:flex;"><span>    PySequenceMethods *tp_as_sequence;
+</span></span><span style="display:flex;"><span>    PyMappingMethods *tp_as_mapping;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* More standard operations (here for binary compatibility) */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    hashfunc tp_hash;
+</span></span><span style="display:flex;"><span>    ternaryfunc tp_call;
+</span></span><span style="display:flex;"><span>    reprfunc tp_str;
+</span></span><span style="display:flex;"><span>    getattrofunc tp_getattro;
+</span></span><span style="display:flex;"><span>    setattrofunc tp_setattro;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Functions to access object as input/output buffer */</span>
+</span></span><span style="display:flex;"><span>    PyBufferProcs *tp_as_buffer;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Flags to define presence of optional/expanded features */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">unsigned</span> <span style="color:#2b91af">long</span> tp_flags;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> <span style="color:#2b91af">char</span> *tp_doc; <span style="color:#008000">/* Documentation string */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Assigned meaning in release 2.0 */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* call function for all accessible objects */</span>
+</span></span><span style="display:flex;"><span>    traverseproc tp_traverse;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* delete references to contained objects */</span>
+</span></span><span style="display:flex;"><span>    inquiry tp_clear;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Assigned meaning in release 2.1 */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* rich comparisons */</span>
+</span></span><span style="display:flex;"><span>    richcmpfunc tp_richcompare;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* weak reference enabler */</span>
+</span></span><span style="display:flex;"><span>    Py_ssize_t tp_weaklistoffset;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Iterators */</span>
+</span></span><span style="display:flex;"><span>    getiterfunc tp_iter;
+</span></span><span style="display:flex;"><span>    iternextfunc tp_iternext;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Attribute descriptor and subclassing stuff */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">struct</span> PyMethodDef *tp_methods; <span style="color:#008000">// object&#39;s supported methods, part of dir(o) show
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">struct</span> PyMemberDef *tp_members;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">struct</span> PyGetSetDef *tp_getset;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Strong reference on a heap type, borrowed reference on a static type
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">struct</span> _typeobject *tp_base;
+</span></span><span style="display:flex;"><span>    PyObject *tp_dict;
+</span></span><span style="display:flex;"><span>    descrgetfunc tp_descr_get;
+</span></span><span style="display:flex;"><span>    descrsetfunc tp_descr_set;
+</span></span><span style="display:flex;"><span>    Py_ssize_t tp_dictoffset;
+</span></span><span style="display:flex;"><span>    initproc tp_init;
+</span></span><span style="display:flex;"><span>    allocfunc tp_alloc;
+</span></span><span style="display:flex;"><span>    newfunc tp_new;
+</span></span><span style="display:flex;"><span>    freefunc tp_free; <span style="color:#008000">/* Low-level free-memory routine */</span>
+</span></span><span style="display:flex;"><span>    inquiry tp_is_gc; <span style="color:#008000">/* For PyObject_IS_GC */</span>
+</span></span><span style="display:flex;"><span>    PyObject *tp_bases;
+</span></span><span style="display:flex;"><span>    PyObject *tp_mro; <span style="color:#008000">/* method resolution order */</span>
+</span></span><span style="display:flex;"><span>    PyObject *tp_cache;
+</span></span><span style="display:flex;"><span>    PyObject *tp_subclasses;
+</span></span><span style="display:flex;"><span>    PyObject *tp_weaklist;
+</span></span><span style="display:flex;"><span>    destructor tp_del;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Type attribute cache version tag. Added in version 2.6 */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#2b91af">unsigned</span> <span style="color:#2b91af">int</span> tp_version_tag;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    destructor tp_finalize;
+</span></span><span style="display:flex;"><span>    vectorcallfunc tp_vectorcall;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Include/cpython/object.h
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">typedef</span> <span style="color:#00f">struct</span> {
+</span></span><span style="display:flex;"><span>    lenfunc mp_length;
+</span></span><span style="display:flex;"><span>    binaryfunc mp_subscript;
+</span></span><span style="display:flex;"><span>    objobjargproc mp_ass_subscript;
+</span></span><span style="display:flex;"><span>} PyMappingMethods;
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// math rule: PyTypeObject-&gt;tp_as_mapping != NULL
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyTypeObject PyDict_Type = {
+</span></span><span style="display:flex;"><span>    PyVarObject_HEAD_INIT(&amp;PyType_Type, 0)
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">&#34;dict&#34;</span>,
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>    &amp;dict_as_mapping,                           <span style="color:#008000">/* tp_as_mapping */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	...
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// match rule: PyMappingMethods-&gt;mp_ass_subscript(PyDictObject *mp, PyObject *v, PyObject *w)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> PyMappingMethods dict_as_mapping = {
+</span></span><span style="display:flex;"><span>    (lenfunc)dict_length, <span style="color:#008000">/*mp_length*/</span>
+</span></span><span style="display:flex;"><span>    (binaryfunc)dict_subscript, <span style="color:#008000">/*mp_subscript*/</span>
+</span></span><span style="display:flex;"><span>    (objobjargproc)dict_ass_sub, <span style="color:#008000">/*mp_ass_subscript*/</span>
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">// DELETE_SUBSCR also using this function, when &#34;w&#34; is NULL, it means delete key
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// when &#34;w&#34; is NOT NULL, it means set key
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (w == NULL)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyDict_DelItem((PyObject *)mp, v);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyDict_SetItem((PyObject *)mp, v, w);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">/* CAUTION: PyDict_SetItem() must guarantee that it won&#39;t resize the
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * dictionary if it&#39;s merely replacing the value for an existing key.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * This means that it&#39;s safe to loop over a dictionary with PyDict_Next()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * and occasionally replace a value -- but you can&#39;t insert new keys or
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * remove them.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> */</span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyDictObject *mp;
+</span></span><span style="display:flex;"><span>    Py_hash_t hash;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyDict_Check(op)) {
+</span></span><span style="display:flex;"><span>        PyErr_BadInternalCall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    assert(key);
+</span></span><span style="display:flex;"><span>    assert(value);
+</span></span><span style="display:flex;"><span>    mp = (PyDictObject *)op;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyUnicode_CheckExact(key) ||
+</span></span><span style="display:flex;"><span>        (hash = ((PyASCIIObject *) key)-&gt;hash) == -1)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        hash = PyObject_Hash(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (hash == -1)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (mp-&gt;ma_keys == Py_EMPTY_KEYS) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> insert_to_emptydict(mp, key, hash, value);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* insertdict() handles any resizing that might be necessary */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> insertdict(mp, key, hash, value);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h2 id="references">References</h2>
+<ol>
+<li><a href="https://docs.python.org/3.8/library/dis.html">dis - Disassembler for Python bytecode</a></li>
+<li><a href="https://docs.python.org/3/c-api/typeobj.html">python3 - Type Objects</a></li>
+</ol>
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/python">python</a></li>
+							
+							<li><a href="/tags/python-internal">python-internal</a></li>
+							
+						</ul>
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>
