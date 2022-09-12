@@ -2,20 +2,20 @@
 <html>
 <head>
 	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[python] Difference Between Binary and In-place Operations - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta itemprop="name" content="[python] Difference Between Binary and In-place Operations">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[python-internal] Binary and In-place Operation - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="[python-internal] Binary and In-place Operation">
 <meta itemprop="description" content="Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &ldquo;pythonic&rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&rsquo;s current memory allocated and id() to checking whether object&rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like &#43; , - , * , / , % ."><meta itemprop="datePublished" content="2022-08-21T21:05:18+08:00" />
 <meta itemprop="dateModified" content="2022-08-21T21:05:18+08:00" />
 <meta itemprop="wordCount" content="988">
-<meta itemprop="keywords" content="python," /><meta property="og:title" content="[python] Difference Between Binary and In-place Operations" />
+<meta itemprop="keywords" content="python,python-internal," /><meta property="og:title" content="[python-internal] Binary and In-place Operation" />
 <meta property="og:description" content="Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &ldquo;pythonic&rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&rsquo;s current memory allocated and id() to checking whether object&rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like &#43; , - , * , / , % ." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/" /><meta property="article:section" content="blog" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/python_internal_binary_and_in-place_operation/" /><meta property="article:section" content="blog" />
 <meta property="article:published_time" content="2022-08-21T21:05:18+08:00" />
 <meta property="article:modified_time" content="2022-08-21T21:05:18+08:00" />
 
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="[python] Difference Between Binary and In-place Operations"/>
+<meta name="twitter:title" content="[python-internal] Binary and In-place Operation"/>
 <meta name="twitter:description" content="Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &ldquo;pythonic&rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&rsquo;s current memory allocated and id() to checking whether object&rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like &#43; , - , * , / , % ."/>
 <link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
@@ -71,7 +71,7 @@
 					</div>
 				
 				<div class="matter">
-					<h1 class="title">[python] Difference Between Binary and In-place Operations</h1>
+					<h1 class="title">[python-internal] Binary and In-place Operation</h1>
 				</div>
 			</div>
 					
@@ -357,6 +357,8 @@
 						<ul class="flat">
 							
 							<li><a href="/tags/python">python</a></li>
+							
+							<li><a href="/tags/python-internal">python-internal</a></li>
 							
 						</ul>
 					
