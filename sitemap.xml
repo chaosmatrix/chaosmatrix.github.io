@@ -2,28 +2,46 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_dict/</loc>
+    <lastmod>2022-09-09T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/blog/</loc>
+    <lastmod>2022-09-09T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/</loc>
+    <lastmod>2022-09-09T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/python/</loc>
+    <lastmod>2022-09-09T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/python-internal/</loc>
+    <lastmod>2022-09-09T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/</loc>
+    <lastmod>2022-09-09T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/blog/python_internal_from_python_to_bytecode_until_c/</loc>
+    <lastmod>2022-09-03T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/blog/paper-review_fairness_and_interactive_performance_of_o1_and_cfs_linux_kernel_schedulers/</loc>
+    <lastmod>2022-09-01T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/linux/</loc>
+    <lastmod>2022-09-01T21:05:18+08:00</lastmod>
+  </url><url>
+    <loc>https://chaosmatrix.github.io/tags/paper-review/</loc>
+    <lastmod>2022-09-01T21:05:18+08:00</lastmod>
+  </url><url>
     <loc>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_list/</loc>
     <lastmod>2022-08-28T21:05:18+08:00</lastmod>
   </url><url>
-    <loc>https://chaosmatrix.github.io/blog/</loc>
-    <lastmod>2022-08-28T21:05:18+08:00</lastmod>
-  </url><url>
-    <loc>https://chaosmatrix.github.io/</loc>
-    <lastmod>2022-08-28T21:05:18+08:00</lastmod>
-  </url><url>
-    <loc>https://chaosmatrix.github.io/tags/python/</loc>
-    <lastmod>2022-08-28T21:05:18+08:00</lastmod>
-  </url><url>
-    <loc>https://chaosmatrix.github.io/tags/</loc>
-    <lastmod>2022-08-28T21:05:18+08:00</lastmod>
-  </url><url>
-    <loc>https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/</loc>
+    <loc>https://chaosmatrix.github.io/blog/python_internal_binary_and_in-place_operation/</loc>
     <lastmod>2022-08-21T21:05:18+08:00</lastmod>
   </url><url>
-    <loc>https://chaosmatrix.github.io/tags/compressor/</loc>
+    <loc>https://chaosmatrix.github.io/blog/nginx_http_serving_compressed_file/</loc>
     <lastmod>2022-08-20T21:05:18+08:00</lastmod>
   </url><url>
-    <loc>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</loc>
+    <loc>https://chaosmatrix.github.io/tags/compressor/</loc>
     <lastmod>2022-08-20T21:05:18+08:00</lastmod>
   </url><url>
     <loc>https://chaosmatrix.github.io/tags/nginx/</loc>

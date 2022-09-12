@@ -2,12 +2,12 @@
 <html>
 <head>
 	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[python] Internal Implementation of Type List - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta itemprop="name" content="[python] Internal Implementation of Type List">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[python internal] Implementation of Type List - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="[python internal] Implementation of Type List">
 <meta itemprop="description" content="Abstract The only way to shrink list without delete element is making a copy of the old one, like l = l[:len(l)] or a = l.copy() Large list might has lots of allocated but unused space Deleting element has an ability of shrinking list Metrics Operation Average Case Amortized Worst Case Increase Space Inplace Resize copy O(n) O(n) O(n) N I append O(1) O(1) O(1) Y I|- clear O(n) O(n) - Y D count O(n) O(n) - N - extend O(k) O(k) O(k) Y I|- index O(n) O(n) - N - insert O(n) O(n) O(1) Y I|- pop O(n) O(n) Y D|- remove O(n) O(n) Y D|- reverse O(n) O(n) Y - sort O(n log n) O(n log n) - Y - __add__ O(n &#43; k) O(n &#43; k) O(n &#43; k) N I __iadd__ O(k) O(k) O(k) Y I- __mul__ O(n*k) O(n*k) O（n*k) N I __imul__ O(n*(k-1)) O(n*(k-1)) O(n*(k-1)) Y I- Comment:"><meta itemprop="datePublished" content="2022-08-28T21:05:18+08:00" />
 <meta itemprop="dateModified" content="2022-08-28T21:05:18+08:00" />
-<meta itemprop="wordCount" content="1613">
-<meta itemprop="keywords" content="python," /><meta property="og:title" content="[python] Internal Implementation of Type List" />
+<meta itemprop="wordCount" content="1617">
+<meta itemprop="keywords" content="python,python-internal," /><meta property="og:title" content="[python internal] Implementation of Type List" />
 <meta property="og:description" content="Abstract The only way to shrink list without delete element is making a copy of the old one, like l = l[:len(l)] or a = l.copy() Large list might has lots of allocated but unused space Deleting element has an ability of shrinking list Metrics Operation Average Case Amortized Worst Case Increase Space Inplace Resize copy O(n) O(n) O(n) N I append O(1) O(1) O(1) Y I|- clear O(n) O(n) - Y D count O(n) O(n) - N - extend O(k) O(k) O(k) Y I|- index O(n) O(n) - N - insert O(n) O(n) O(1) Y I|- pop O(n) O(n) Y D|- remove O(n) O(n) Y D|- reverse O(n) O(n) Y - sort O(n log n) O(n log n) - Y - __add__ O(n &#43; k) O(n &#43; k) O(n &#43; k) N I __iadd__ O(k) O(k) O(k) Y I- __mul__ O(n*k) O(n*k) O（n*k) N I __imul__ O(n*(k-1)) O(n*(k-1)) O(n*(k-1)) Y I- Comment:" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_list/" /><meta property="article:section" content="blog" />
@@ -15,7 +15,7 @@
 <meta property="article:modified_time" content="2022-08-28T21:05:18+08:00" />
 
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="[python] Internal Implementation of Type List"/>
+<meta name="twitter:title" content="[python internal] Implementation of Type List"/>
 <meta name="twitter:description" content="Abstract The only way to shrink list without delete element is making a copy of the old one, like l = l[:len(l)] or a = l.copy() Large list might has lots of allocated but unused space Deleting element has an ability of shrinking list Metrics Operation Average Case Amortized Worst Case Increase Space Inplace Resize copy O(n) O(n) O(n) N I append O(1) O(1) O(1) Y I|- clear O(n) O(n) - Y D count O(n) O(n) - N - extend O(k) O(k) O(k) Y I|- index O(n) O(n) - N - insert O(n) O(n) O(1) Y I|- pop O(n) O(n) Y D|- remove O(n) O(n) Y D|- reverse O(n) O(n) Y - sort O(n log n) O(n log n) - Y - __add__ O(n &#43; k) O(n &#43; k) O(n &#43; k) N I __iadd__ O(k) O(k) O(k) Y I- __mul__ O(n*k) O(n*k) O（n*k) N I __imul__ O(n*(k-1)) O(n*(k-1)) O(n*(k-1)) Y I- Comment:"/>
 <link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
@@ -71,7 +71,7 @@
 					</div>
 				
 				<div class="matter">
-					<h1 class="title">[python] Internal Implementation of Type List</h1>
+					<h1 class="title">[python internal] Implementation of Type List</h1>
 				</div>
 			</div>
 					
@@ -605,6 +605,7 @@ A: Arrays are sequence types and behave very much like lists, except that the ty
 <li><a href="https://linux.die.net/man/3/memmove">linux - memmove</a></li>
 <li><a href="https://github.com/nasrat-v/asm_minilibc/blob/master/memmove.s#L6">minilibc - the asm simulation of memmove</a></li>
 <li><a href="https://docs.python.org/3/library/array.html">python3 - array</a></li>
+<li><a href="https://godbolt.org/">web - Compiler Explorer</a></li>
 </ol>
 
 			</div>
@@ -615,6 +616,8 @@ A: Arrays are sequence types and behave very much like lists, except that the ty
 						<ul class="flat">
 							
 							<li><a href="/tags/python">python</a></li>
+							
+							<li><a href="/tags/python-internal">python-internal</a></li>
 							
 						</ul>
 					

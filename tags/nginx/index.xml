@@ -9,11 +9,11 @@
     <copyright>© Copyright chaosmatrix</copyright>
     <lastBuildDate>Sat, 20 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/nginx/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>HTTP Serving Compressed File</title>
-      <link>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</link>
+      <title>[nginx] HTTP Serving Compressed File</title>
+      <link>https://chaosmatrix.github.io/blog/nginx_http_serving_compressed_file/</link>
       <pubDate>Sat, 20 Aug 2022 21:05:18 +0800</pubDate>
       
-      <guid>https://chaosmatrix.github.io/blog/http_serving_compressed_file/</guid>
+      <guid>https://chaosmatrix.github.io/blog/nginx_http_serving_compressed_file/</guid>
       <description>Abstract Most web browsers include built-in support for gzip, deflate, br Most programming languages include built-in support for gzip and deflate, and br typically has community support Nginx - ngx_http_gzip_static_module Conclusions:
 Check config: if gzip_static enable or not ? Check request header: client support gzip or not ? when using common algorithm, like &amp;ldquo;gzip&amp;rdquo;, skiping this seems no problem Mapping url to file path with given rule (filename extension is &amp;ldquo;.</description>
     </item>

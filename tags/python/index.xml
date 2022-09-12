@@ -7,9 +7,28 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Copyright chaosmatrix</copyright>
-    <lastBuildDate>Sun, 28 Aug 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 09 Sep 2022 21:05:18 +0800</lastBuildDate><atom:link href="https://chaosmatrix.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>[python] Internal Implementation of Type List</title>
+      <title>[python internal] Implementation of Type Dict</title>
+      <link>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_dict/</link>
+      <pubDate>Fri, 09 Sep 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_dict/</guid>
+      <description>Abstract using char[] store data, using Open Addressing handle hash collision hash table will be expanded only there are no valid solt or hash table isn&amp;rsquo;t combined (dict always combined ?) deleting item won&amp;rsquo;t decrease memory usage, only update matching solt with value DKIX_DUMMY during resizing, all old data will be copy into new hash table, then free old hash table memory usage in python3, keys() and values() create view object, not list object (python2) Metrics Operation Average Case Amortized Worst Case copy O(n) O(n) k in d O(1) O(n) get O(1) O(n) set O(1) O(n) delete O(1) O(n) iteration O(n) O(n) Source Code background:</description>
+    </item>
+    
+    <item>
+      <title>[python internal] From Python to Bytecode until C</title>
+      <link>https://chaosmatrix.github.io/blog/python_internal_from_python_to_bytecode_until_c/</link>
+      <pubDate>Sat, 03 Sep 2022 21:05:18 +0800</pubDate>
+      
+      <guid>https://chaosmatrix.github.io/blog/python_internal_from_python_to_bytecode_until_c/</guid>
+      <description>Abstract Use module dis to get the minimize assembly code. Found the entry from Python/ceval.c with the bytecode that disassembled before. Now the door is open and the road is at your feet. Python -&amp;gt; Bytecode -&amp;gt; C Vesion: Python-3.10.6
+1. Example - Python &amp;gt;&amp;gt;&amp;gt; def f(): ... d = {} ... d[1] = 1 ... 2. Python -&amp;gt; Bytecode &amp;gt;&amp;gt;&amp;gt; import dis &amp;gt;&amp;gt;&amp;gt; &amp;gt;&amp;gt;&amp;gt; def f(): ... d = {} .</description>
+    </item>
+    
+    <item>
+      <title>[python internal] Implementation of Type List</title>
       <link>https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_list/</link>
       <pubDate>Sun, 28 Aug 2022 21:05:18 +0800</pubDate>
       
@@ -18,11 +37,11 @@
     </item>
     
     <item>
-      <title>[python] Difference Between Binary and In-place Operations</title>
-      <link>https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/</link>
+      <title>[python-internal] Binary and In-place Operation</title>
+      <link>https://chaosmatrix.github.io/blog/python_internal_binary_and_in-place_operation/</link>
       <pubDate>Sun, 21 Aug 2022 21:05:18 +0800</pubDate>
       
-      <guid>https://chaosmatrix.github.io/blog/python_difference_between_binary_and_in-place_operations/</guid>
+      <guid>https://chaosmatrix.github.io/blog/python_internal_binary_and_in-place_operation/</guid>
       <description>Abstract Use of a compound operator that will be compiled into INPLACE_* bytecode instruction at the end may result in a bug that is difficult to debug. Why In-place operation design like this ? to make code more &amp;ldquo;pythonic&amp;rdquo; and increase performance in some case (avoid allocating new memory areas. this can be verified by using sys.getsizeof() to get object&amp;rsquo;s current memory allocated and id() to checking whether object&amp;rsquo;s pointer change or not) What As python coder, binary operation is the code using arithmetic operator like + , - , * , / , % .</description>
     </item>
     
