@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>[python internal] Implementation of Type Dict - Chaosmatrix</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta itemprop="name" content="[python internal] Implementation of Type Dict">
+<meta itemprop="description" content="Abstract using char[] store data, using Open Addressing handle hash collision hash table will be expanded only there are no valid solt or hash table isn&rsquo;t combined (dict always combined ?) deleting item won&rsquo;t decrease memory usage, only update matching solt with value DKIX_DUMMY during resizing, all old data will be copy into new hash table, then free old hash table memory usage in python3, keys() and values() create view object, not list object (python2) Metrics Operation Average Case Amortized Worst Case copy O(n) O(n) k in d O(1) O(n) get O(1) O(n) set O(1) O(n) delete O(1) O(n) iteration O(n) O(n) Source Code background:"><meta itemprop="datePublished" content="2022-09-09T21:05:18+08:00" />
+<meta itemprop="dateModified" content="2022-09-09T21:05:18+08:00" />
+<meta itemprop="wordCount" content="2345">
+<meta itemprop="keywords" content="python,python-internal," /><meta property="og:title" content="[python internal] Implementation of Type Dict" />
+<meta property="og:description" content="Abstract using char[] store data, using Open Addressing handle hash collision hash table will be expanded only there are no valid solt or hash table isn&rsquo;t combined (dict always combined ?) deleting item won&rsquo;t decrease memory usage, only update matching solt with value DKIX_DUMMY during resizing, all old data will be copy into new hash table, then free old hash table memory usage in python3, keys() and values() create view object, not list object (python2) Metrics Operation Average Case Amortized Worst Case copy O(n) O(n) k in d O(1) O(n) get O(1) O(n) set O(1) O(n) delete O(1) O(n) iteration O(n) O(n) Source Code background:" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://chaosmatrix.github.io/blog/python_internal_implementation_of_type_dict/" /><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2022-09-09T21:05:18+08:00" />
+<meta property="article:modified_time" content="2022-09-09T21:05:18+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="[python internal] Implementation of Type Dict"/>
+<meta name="twitter:description" content="Abstract using char[] store data, using Open Addressing handle hash collision hash table will be expanded only there are no valid solt or hash table isn&rsquo;t combined (dict always combined ?) deleting item won&rsquo;t decrease memory usage, only update matching solt with value DKIX_DUMMY during resizing, all old data will be copy into new hash table, then free old hash table memory usage in python3, keys() and values() create view object, not list object (python2) Metrics Operation Average Case Amortized Worst Case copy O(n) O(n) k in d O(1) O(n) get O(1) O(n) set O(1) O(n) delete O(1) O(n) iteration O(n) O(n) Source Code background:"/>
+<link href='https://fonts.googleapis.com/css?family=Playfair+Display:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://chaosmatrix.github.io/css/main.css" />
+
+        <link id="dark-scheme" rel="stylesheet" type="text/css" href="https://chaosmatrix.github.io/css/dark.css" />
+
+	<script src="https://chaosmatrix.github.io/js/feather.min.js"></script>
+	
+		<script src="https://chaosmatrix.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper">
+		<div class="header">
+	
+		<div class="avatar">
+			<a href="https://chaosmatrix.github.io/">
+				<img src="https://avatars.githubusercontent.com/u/37551759?v=4" alt="Chaosmatrix" />
+			</a>
+		</div>
+	
+	<h1 class="site-title"><a href="https://chaosmatrix.github.io/">Chaosmatrix</a></h1>
+	<div class="site-description"><p>Thoughts come and go, words stay eternal</p><nav class="nav social">
+			<ul class="flat"><li><a href="https://github.com/chaosmatrix" title="Github"><i data-feather="github"></i></a></li><li><a href="#" class="scheme-toggle" id="scheme-toggle"></a></li></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/blog">Blog</a>
+			</li>
+			
+			<li>
+				<a href="/wasm">Wasm</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post">
+			<div class="post-header">
+				
+					<div class="meta">
+						<div class="date">
+							<span class="day">09</span>
+							<span class="rest">Sep 2022</span>
+						</div>
+					</div>
+				
+				<div class="matter">
+					<h1 class="title">[python internal] Implementation of Type Dict</h1>
+				</div>
+			</div>
+					
+			<div class="markdown">
+				<h2 id="abstract">Abstract</h2>
+<ol>
+<li>using <strong>char[]</strong> store data, using <strong>Open Addressing</strong> handle hash collision</li>
+<li>hash table will be expanded only there are no valid solt or hash table isn&rsquo;t combined (dict always combined ?)</li>
+<li>deleting item won&rsquo;t decrease memory usage, only update matching solt with value <strong>DKIX_DUMMY</strong></li>
+<li>during resizing, all old data will be copy into new hash table, then free old hash table memory usage</li>
+<li>in python3, <strong>keys()</strong> and <strong>values()</strong> create view object, not list object (python2)</li>
+</ol>
+<h2 id="metrics">Metrics</h2>
+<table>
+<thead>
+<tr>
+<th><strong>Operation</strong></th>
+<th><strong>Average Case</strong></th>
+<th><strong><a href="http://en.wikipedia.org/wiki/Amortized_analysis">Amortized Worst Case</a></strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>copy</td>
+<td>O(n)</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>k in d</td>
+<td>O(1)</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>get</td>
+<td>O(1)</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>set</td>
+<td>O(1)</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>delete</td>
+<td>O(1)</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>iteration</td>
+<td>O(n)</td>
+<td>O(n)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="source-code">Source Code</h2>
+<p>background:</p>
+<ol>
+<li>python-3.10.6</li>
+</ol>
+<h3 id="basic-data-structure">Basic Data Structure</h3>
+<h5 id="dict-type">Dict Type</h5>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyTypeObject PyDict_Type = {
+</span></span><span style="display:flex;"><span>    PyVarObject_HEAD_INIT(&amp;PyType_Type, 0)
+</span></span><span style="display:flex;"><span>    <span style="color:#a31515">&#34;dict&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">sizeof</span>(PyDictObject),
+</span></span><span style="display:flex;"><span>    0,
+</span></span><span style="display:flex;"><span>    (destructor)dict_dealloc,                   <span style="color:#008000">/* tp_dealloc */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_vectorcall_offset */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_getattr */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_setattr */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_as_async */</span>
+</span></span><span style="display:flex;"><span>    (reprfunc)dict_repr,                        <span style="color:#008000">/* tp_repr */</span>
+</span></span><span style="display:flex;"><span>    &amp;dict_as_number,                            <span style="color:#008000">/* tp_as_number */</span>
+</span></span><span style="display:flex;"><span>    &amp;dict_as_sequence,                          <span style="color:#008000">/* tp_as_sequence */</span>
+</span></span><span style="display:flex;"><span>    &amp;dict_as_mapping,                           <span style="color:#008000">/* tp_as_mapping */</span>
+</span></span><span style="display:flex;"><span>    PyObject_HashNotImplemented,                <span style="color:#008000">/* tp_hash */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_call */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_str */</span>
+</span></span><span style="display:flex;"><span>    PyObject_GenericGetAttr,                    <span style="color:#008000">/* tp_getattro */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_setattro */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_as_buffer */</span>
+</span></span><span style="display:flex;"><span>    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+</span></span><span style="display:flex;"><span>        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DICT_SUBCLASS |
+</span></span><span style="display:flex;"><span>        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,  <span style="color:#008000">/* tp_flags */</span>
+</span></span><span style="display:flex;"><span>    dictionary_doc,                             <span style="color:#008000">/* tp_doc */</span>
+</span></span><span style="display:flex;"><span>    dict_traverse,                              <span style="color:#008000">/* tp_traverse */</span>
+</span></span><span style="display:flex;"><span>    dict_tp_clear,                              <span style="color:#008000">/* tp_clear */</span>
+</span></span><span style="display:flex;"><span>    dict_richcompare,                           <span style="color:#008000">/* tp_richcompare */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_weaklistoffset */</span>
+</span></span><span style="display:flex;"><span>    (getiterfunc)dict_iter,                     <span style="color:#008000">/* tp_iter */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_iternext */</span>
+</span></span><span style="display:flex;"><span>    mapp_methods,                               <span style="color:#008000">/* tp_methods */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_members */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_getset */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_base */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_dict */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_descr_get */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_descr_set */</span>
+</span></span><span style="display:flex;"><span>    0,                                          <span style="color:#008000">/* tp_dictoffset */</span>
+</span></span><span style="display:flex;"><span>    dict_init,                                  <span style="color:#008000">/* tp_init */</span>
+</span></span><span style="display:flex;"><span>    PyType_GenericAlloc,                        <span style="color:#008000">/* tp_alloc */</span>
+</span></span><span style="display:flex;"><span>    dict_new,                                   <span style="color:#008000">/* tp_new */</span>
+</span></span><span style="display:flex;"><span>    PyObject_GC_Del,                            <span style="color:#008000">/* tp_free */</span>
+</span></span><span style="display:flex;"><span>    .tp_vectorcall = dict_vectorcall,
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h5 id="dict-method-mapping">Dict Method Mapping</h5>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// 
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// object&#39;s method mapping, 
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// used by bytecode LOAD_METHOD and CALL_METHOD
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> PyMethodDef mapp_methods[] = {
+</span></span><span style="display:flex;"><span>    DICT___CONTAINS___METHODDEF			<span style="color:#008000">// key in dict
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;__getitem__&#34;</span>, (PyCFunction)(<span style="color:#2b91af">void</span>(*)(<span style="color:#2b91af">void</span>))dict_subscript,        METH_O | METH_COEXIST,
+</span></span><span style="display:flex;"><span>     getitem__doc__},
+</span></span><span style="display:flex;"><span>    {<span style="color:#a31515">&#34;__sizeof__&#34;</span>,      (PyCFunction)(<span style="color:#2b91af">void</span>(*)(<span style="color:#2b91af">void</span>))dict_sizeof,       METH_NOARGS,
+</span></span><span style="display:flex;"><span>     sizeof__doc__},
+</span></span><span style="display:flex;"><span>    DICT_GET_METHODDEF                  <span style="color:#008000">// dict.get(k)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    DICT_SETDEFAULT_METHODDEF           <span style="color:#008000">// dict.setdefault(v)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    DICT_POP_METHODDEF                  <span style="color:#008000">// dict.pop(k)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    DICT_POPITEM_METHODDEF				<span style="color:#008000">// dict.popitem()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;keys&#34;</span>,            dictkeys_new,                   METH_NOARGS,
+</span></span><span style="display:flex;"><span>    keys__doc__},						<span style="color:#008000">// dict.keys()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;items&#34;</span>,           dictitems_new,                  METH_NOARGS,
+</span></span><span style="display:flex;"><span>    items__doc__},						<span style="color:#008000">// dict.items()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;values&#34;</span>,          dictvalues_new,                 METH_NOARGS,
+</span></span><span style="display:flex;"><span>    values__doc__},						<span style="color:#008000">// dict.values()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;update&#34;</span>,          (PyCFunction)(<span style="color:#2b91af">void</span>(*)(<span style="color:#2b91af">void</span>))dict_update, METH_VARARGS | METH_KEYWORDS,
+</span></span><span style="display:flex;"><span>     update__doc__},					<span style="color:#008000">// dict.update()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    DICT_FROMKEYS_METHODDEF				<span style="color:#008000">// dict.fromkeys()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;clear&#34;</span>,           (PyCFunction)dict_clear,        METH_NOARGS,
+</span></span><span style="display:flex;"><span>     clear__doc__},						<span style="color:#008000">// dict.clear()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    {<span style="color:#a31515">&#34;copy&#34;</span>,            (PyCFunction)dict_copy,         METH_NOARGS,
+</span></span><span style="display:flex;"><span>     copy__doc__},						<span style="color:#008000">// dict.copy()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    DICT___REVERSED___METHODDEF
+</span></span><span style="display:flex;"><span>    {<span style="color:#a31515">&#34;__class_getitem__&#34;</span>, (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR(<span style="color:#a31515">&#34;See PEP 585&#34;</span>)},
+</span></span><span style="display:flex;"><span>    {NULL,              NULL}   <span style="color:#008000">/* sentinel */</span>
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h3 id="new">New</h3>
+<p><strong>Python code:</strong></p>
+<ul>
+<li><strong>d = dict(d1)</strong>: create new empty Dictobject, then merge <strong>d1</strong> into <strong>d</strong>, equal call <strong>d = dict()</strong> then <strong>d.update(d1)</strong></li>
+<li><strong>d = {}</strong>: create new dictobject</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// d = dict()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyObject *self;
+</span></span><span style="display:flex;"><span>    PyDictObject *d;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    assert(type != NULL &amp;&amp; type-&gt;tp_alloc != NULL);
+</span></span><span style="display:flex;"><span>    self = type-&gt;tp_alloc(type, 0);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (self == NULL)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    d = (PyDictObject *)self;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* The object has been implicitly tracked by tp_alloc */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (type == &amp;PyDict_Type) {
+</span></span><span style="display:flex;"><span>        _PyObject_GC_UNTRACK(d);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    d-&gt;ma_used = 0;
+</span></span><span style="display:flex;"><span>    d-&gt;ma_version_tag = DICT_NEXT_VERSION();
+</span></span><span style="display:flex;"><span>    dictkeys_incref(Py_EMPTY_KEYS);
+</span></span><span style="display:flex;"><span>    d-&gt;ma_keys = Py_EMPTY_KEYS;
+</span></span><span style="display:flex;"><span>    d-&gt;ma_values = empty_values;
+</span></span><span style="display:flex;"><span>    ASSERT_CONSISTENT(d);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> self;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// d = {}
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>PyObject *
+</span></span><span style="display:flex;"><span>_PyDict_NewPresized(Py_ssize_t minused)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">const</span> Py_ssize_t max_presize = 128 * 1024;
+</span></span><span style="display:flex;"><span>    Py_ssize_t newsize;
+</span></span><span style="display:flex;"><span>    PyDictKeysObject *new_keys;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (minused &lt;= USABLE_FRACTION(PyDict_MINSIZE)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyDict_New();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* There are no strict guarantee that returned dict can contain minused
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * items without resize.  So we create medium size dict instead of very
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * large dict or MemoryError.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (minused &gt; USABLE_FRACTION(max_presize)) {
+</span></span><span style="display:flex;"><span>        newsize = max_presize;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>        newsize = estimate_keysize(minused);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    new_keys = new_keys_object(newsize);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (new_keys == NULL)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> new_dict(new_keys, NULL);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">/* Consumes a reference to the keys object */</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>new_dict(PyDictKeysObject *keys, PyObject **values)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyDictObject *mp;
+</span></span><span style="display:flex;"><span>    assert(keys != NULL);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">struct</span> _Py_dict_state *state = get_dict_state();
+</span></span><span style="display:flex;"><span><span style="color:#00f">#ifdef Py_DEBUG
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>    <span style="color:#008000">// new_dict() must not be called after _PyDict_Fini()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    assert(state-&gt;numfree != -1);
+</span></span><span style="display:flex;"><span><span style="color:#00f">#endif
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>    <span style="color:#00f">if</span> (state-&gt;numfree) {
+</span></span><span style="display:flex;"><span>        mp = state-&gt;free_list[--state-&gt;numfree];
+</span></span><span style="display:flex;"><span>        assert (mp != NULL);
+</span></span><span style="display:flex;"><span>        assert (Py_IS_TYPE(mp, &amp;PyDict_Type));
+</span></span><span style="display:flex;"><span>        _Py_NewReference((PyObject *)mp);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>        mp = PyObject_GC_New(PyDictObject, &amp;PyDict_Type);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (mp == NULL) {
+</span></span><span style="display:flex;"><span>            dictkeys_decref(keys);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (values != empty_values) {
+</span></span><span style="display:flex;"><span>                free_values(values);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_keys = keys;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_values = values;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_used = 0;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_version_tag = DICT_NEXT_VERSION();
+</span></span><span style="display:flex;"><span>    ASSERT_CONSISTENT(mp);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> (PyObject *)mp;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// d = dict(d1) or d.__init__(d1)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>dict_init(PyObject *self, PyObject *args, PyObject *kwds)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> dict_update_common(self, args, kwds, <span style="color:#a31515">&#34;dict&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="set">Set</h3>
+<p><strong>Python code:</strong></p>
+<ul>
+<li><strong>d[k] = v</strong>: at the end, call <strong>PyDict_SetItem</strong></li>
+<li><strong>d.<strong>setitem</strong>(k, v)</strong>: at the end, call <strong>PyDict_SetItem</strong></li>
+</ul>
+<p><strong>Time to Resize:</strong></p>
+<ul>
+<li>can&rsquo;t found valid(unuse) solt for new item</li>
+<li>hash table is <strong>split</strong></li>
+</ul>
+<p><strong>How to Handle Hash Collision:</strong></p>
+<ul>
+<li><strong>Open Addressing</strong></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> PyMappingMethods dict_as_mapping = {
+</span></span><span style="display:flex;"><span>    (lenfunc)dict_length, <span style="color:#008000">/*mp_length*/</span>
+</span></span><span style="display:flex;"><span>    (binaryfunc)dict_subscript, <span style="color:#008000">/*mp_subscript*/</span>
+</span></span><span style="display:flex;"><span>    (objobjargproc)dict_ass_sub, <span style="color:#008000">/*mp_ass_subscript*/</span>
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (w == NULL)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyDict_DelItem((PyObject *)mp, v);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> PyDict_SetItem((PyObject *)mp, v, w);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">/* CAUTION: PyDict_SetItem() must guarantee that it won&#39;t resize the
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * dictionary if it&#39;s merely replacing the value for an existing key.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * This means that it&#39;s safe to loop over a dictionary with PyDict_Next()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * and occasionally replace a value -- but you can&#39;t insert new keys or
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> * remove them.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"> */</span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyDictObject *mp;
+</span></span><span style="display:flex;"><span>    Py_hash_t hash;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyDict_Check(op)) {
+</span></span><span style="display:flex;"><span>        PyErr_BadInternalCall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    assert(key);
+</span></span><span style="display:flex;"><span>    assert(value);
+</span></span><span style="display:flex;"><span>    mp = (PyDictObject *)op;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyUnicode_CheckExact(key) ||
+</span></span><span style="display:flex;"><span>        (hash = ((PyASCIIObject *) key)-&gt;hash) == -1)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        hash = PyObject_Hash(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (hash == -1)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (mp-&gt;ma_keys == Py_EMPTY_KEYS) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> insert_to_emptydict(mp, key, hash, value);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* insertdict() handles any resizing that might be necessary */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> insertdict(mp, key, hash, value);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="get">Get</h3>
+<p>python code:</p>
+<ol>
+<li><strong>d.get(k)</strong>: if k not exist, return <strong>default_value</strong></li>
+<li><strong>d[k]</strong>: if k not exist, raise <strong>KeyError</strong></li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// d.get(k, default_value) or d.get(k)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>dict_get(PyDictObject *self, PyObject *<span style="color:#00f">const</span> *args, Py_ssize_t nargs)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyObject *return_value = NULL;
+</span></span><span style="display:flex;"><span>    PyObject *key;
+</span></span><span style="display:flex;"><span>    PyObject *default_value = Py_None;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!_PyArg_CheckPositional(<span style="color:#a31515">&#34;get&#34;</span>, nargs, 1, 2)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">goto</span> exit;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    key = args[0];
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (nargs &lt; 2) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">goto</span> skip_optional;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    default_value = args[1];
+</span></span><span style="display:flex;"><span>skip_optional:
+</span></span><span style="display:flex;"><span>    return_value = dict_get_impl(self, key, default_value);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>exit:
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> return_value;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">/*[clinic input]
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">dict.get
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">    key: object
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">    default: object = None
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">    /
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">Return the value for key if key is in the dictionary, else default.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">[clinic start generated code]*/</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
+</span></span><span style="display:flex;"><span><span style="color:#008000">/*[clinic end generated code: output=bba707729dee05bf input=279ddb5790b6b107]*/</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyObject *val = NULL;
+</span></span><span style="display:flex;"><span>    Py_hash_t hash;
+</span></span><span style="display:flex;"><span>    Py_ssize_t ix;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyUnicode_CheckExact(key) ||
+</span></span><span style="display:flex;"><span>        (hash = ((PyASCIIObject *) key)-&gt;hash) == -1) {
+</span></span><span style="display:flex;"><span>        hash = PyObject_Hash(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (hash == -1)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    ix = (self-&gt;ma_keys-&gt;dk_lookup) (self, key, hash, &amp;val);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ix == DKIX_ERROR)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ix == DKIX_EMPTY || val == NULL) {
+</span></span><span style="display:flex;"><span>        val = default_value;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Py_INCREF(val);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> val;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// d[k] equal d.__getitem__(k)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#00f">static</span> PyObject *
+</span></span><span style="display:flex;"><span>dict_subscript(PyDictObject *mp, PyObject *key)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Py_ssize_t ix;
+</span></span><span style="display:flex;"><span>    Py_hash_t hash;
+</span></span><span style="display:flex;"><span>    PyObject *value;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyUnicode_CheckExact(key) ||
+</span></span><span style="display:flex;"><span>        (hash = ((PyASCIIObject *) key)-&gt;hash) == -1) {
+</span></span><span style="display:flex;"><span>        hash = PyObject_Hash(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (hash == -1)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    ix = (mp-&gt;ma_keys-&gt;dk_lookup)(mp, key, hash, &amp;value);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ix == DKIX_ERROR)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ix == DKIX_EMPTY || value == NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (!PyDict_CheckExact(mp)) {
+</span></span><span style="display:flex;"><span>            <span style="color:#008000">/* Look up __missing__ method if we&#39;re a subclass. */</span>
+</span></span><span style="display:flex;"><span>            PyObject *missing, *res;
+</span></span><span style="display:flex;"><span>            _Py_IDENTIFIER(__missing__);
+</span></span><span style="display:flex;"><span>            missing = _PyObject_LookupSpecial((PyObject *)mp, &amp;PyId___missing__);
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">if</span> (missing != NULL) {
+</span></span><span style="display:flex;"><span>                res = PyObject_CallOneArg(missing, key);
+</span></span><span style="display:flex;"><span>                Py_DECREF(missing);
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">return</span> res;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">else</span> <span style="color:#00f">if</span> (PyErr_Occurred())
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        _PyErr_SetKeyError(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> NULL;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    Py_INCREF(value);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> value;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="delete">Delete</h3>
+<p><strong>Python code:</strong></p>
+<ul>
+<li><strong>del d[k]</strong> equal with <strong>d.<strong>delitem</strong>(k)</strong>, if k not exist, raise <strong>KeyError</strong></li>
+</ul>
+<p><strong>Notice:</strong></p>
+<ul>
+<li>delete item won&rsquo;t resize dict</li>
+<li>delete item only update the solt into <strong>DKIX_DUMMY</strong></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// del d[k] or d.__delitem__(k)
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>PyDict_DelItem(PyObject *op, PyObject *key)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Py_hash_t hash;
+</span></span><span style="display:flex;"><span>    assert(key);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyUnicode_CheckExact(key) ||
+</span></span><span style="display:flex;"><span>        (hash = ((PyASCIIObject *) key)-&gt;hash) == -1) {
+</span></span><span style="display:flex;"><span>        hash = PyObject_Hash(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (hash == -1)
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> _PyDict_DelItem_KnownHash(op, key, hash);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>_PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Py_ssize_t ix;
+</span></span><span style="display:flex;"><span>    PyDictObject *mp;
+</span></span><span style="display:flex;"><span>    PyObject *old_value;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyDict_Check(op)) {
+</span></span><span style="display:flex;"><span>        PyErr_BadInternalCall();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    assert(key);
+</span></span><span style="display:flex;"><span>    assert(hash != -1);
+</span></span><span style="display:flex;"><span>    mp = (PyDictObject *)op;
+</span></span><span style="display:flex;"><span>    ix = (mp-&gt;ma_keys-&gt;dk_lookup)(mp, key, hash, &amp;old_value);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ix == DKIX_ERROR)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (ix == DKIX_EMPTY || old_value == NULL) {
+</span></span><span style="display:flex;"><span>        _PyErr_SetKeyError(key);
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// Split table doesn&#39;t allow deletion.  Combine it.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    <span style="color:#00f">if</span> (_PyDict_HasSplitTable(mp)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (dictresize(mp, DK_SIZE(mp-&gt;ma_keys))) {
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        ix = (mp-&gt;ma_keys-&gt;dk_lookup)(mp, key, hash, &amp;old_value);
+</span></span><span style="display:flex;"><span>        assert(ix &gt;= 0);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> delitem_common(mp, hash, ix, old_value);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
+</span></span><span style="display:flex;"><span>               PyObject *old_value)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyObject *old_key;
+</span></span><span style="display:flex;"><span>    PyDictKeyEntry *ep;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Py_ssize_t hashpos = lookdict_index(mp-&gt;ma_keys, hash, ix);
+</span></span><span style="display:flex;"><span>    assert(hashpos &gt;= 0);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_used--;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_version_tag = DICT_NEXT_VERSION();
+</span></span><span style="display:flex;"><span>    ep = &amp;DK_ENTRIES(mp-&gt;ma_keys)[ix];
+</span></span><span style="display:flex;"><span>    dictkeys_set_index(mp-&gt;ma_keys, hashpos, DKIX_DUMMY);
+</span></span><span style="display:flex;"><span>    ENSURE_ALLOWS_DELETIONS(mp);
+</span></span><span style="display:flex;"><span>    old_key = ep-&gt;me_key;
+</span></span><span style="display:flex;"><span>    ep-&gt;me_key = NULL;
+</span></span><span style="display:flex;"><span>    ep-&gt;me_value = NULL;
+</span></span><span style="display:flex;"><span>    Py_DECREF(old_key);
+</span></span><span style="display:flex;"><span>    Py_DECREF(old_value);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ASSERT_CONSISTENT(mp);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="resize">Resize</h3>
+<p><strong>Time to Resize:</strong></p>
+<ul>
+<li>hash table is <strong>split</strong></li>
+<li>new item can&rsquo;t find valid  solt (hash collision)</li>
+</ul>
+<p><strong>How:</strong></p>
+<ul>
+<li>calculate new hash table size</li>
+<li>allocate new hash table</li>
+<li>copy all old data in old hash table into new hash table</li>
+<li>free old hash table</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#008000">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">Restructure the table by allocating a new table and reinserting all
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">items again.  When entries have been deleted, the new table may
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">actually be smaller than the old one.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">If a table is split (its keys and hashes are shared, its values are not),
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">then the values are temporarily copied into the table, it is resized as
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">a combined table, then the me_value slots in the old table are NULLed out.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">After resizing a table is always combined,
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">but can be resplit by make_keys_shared().
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">*/</span>
+</span></span><span style="display:flex;"><span><span style="color:#00f">static</span> <span style="color:#2b91af">int</span>
+</span></span><span style="display:flex;"><span>dictresize(PyDictObject *mp, Py_ssize_t newsize)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Py_ssize_t numentries;
+</span></span><span style="display:flex;"><span>    PyDictKeysObject *oldkeys;
+</span></span><span style="display:flex;"><span>    PyObject **oldvalues;
+</span></span><span style="display:flex;"><span>    PyDictKeyEntry *oldentries, *newentries;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (newsize &lt;= 0) {
+</span></span><span style="display:flex;"><span>        PyErr_NoMemory();
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    assert(IS_POWER_OF_2(newsize));
+</span></span><span style="display:flex;"><span>    assert(newsize &gt;= PyDict_MINSIZE);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    oldkeys = mp-&gt;ma_keys;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* NOTE: Current odict checks mp-&gt;ma_keys to detect resize happen.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * So we can&#39;t reuse oldkeys even if oldkeys-&gt;dk_size == newsize.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     * TODO: Try reusing oldkeys when reimplement odict.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">     */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Allocate a new table. */</span>
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_keys = new_keys_object(newsize);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (mp-&gt;ma_keys == NULL) {
+</span></span><span style="display:flex;"><span>        mp-&gt;ma_keys = oldkeys;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span> -1;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">// New table must be large enough.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>    assert(mp-&gt;ma_keys-&gt;dk_usable &gt;= mp-&gt;ma_used);
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (oldkeys-&gt;dk_lookup == lookdict)
+</span></span><span style="display:flex;"><span>        mp-&gt;ma_keys-&gt;dk_lookup = lookdict;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    numentries = mp-&gt;ma_used;
+</span></span><span style="display:flex;"><span>    oldentries = DK_ENTRIES(oldkeys);
+</span></span><span style="display:flex;"><span>    newentries = DK_ENTRIES(mp-&gt;ma_keys);
+</span></span><span style="display:flex;"><span>    oldvalues = mp-&gt;ma_values;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (oldvalues != NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#008000">/* Convert split table into new combined table.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">         * We must incref keys; we can transfer values.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">         * Note that values of split table is always dense.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">         */</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (Py_ssize_t i = 0; i &lt; numentries; i++) {
+</span></span><span style="display:flex;"><span>            assert(oldvalues[i] != NULL);
+</span></span><span style="display:flex;"><span>            PyDictKeyEntry *ep = &amp;oldentries[i];
+</span></span><span style="display:flex;"><span>            PyObject *key = ep-&gt;me_key;
+</span></span><span style="display:flex;"><span>            Py_INCREF(key);
+</span></span><span style="display:flex;"><span>            newentries[i].me_key = key;
+</span></span><span style="display:flex;"><span>            newentries[i].me_hash = ep-&gt;me_hash;
+</span></span><span style="display:flex;"><span>            newentries[i].me_value = oldvalues[i];
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        dictkeys_decref(oldkeys);
+</span></span><span style="display:flex;"><span>        mp-&gt;ma_values = NULL;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">if</span> (oldvalues != empty_values) {
+</span></span><span style="display:flex;"><span>            free_values(oldvalues);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span> {  <span style="color:#008000">// combined table.
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        <span style="color:#00f">if</span> (oldkeys-&gt;dk_nentries == numentries) {
+</span></span><span style="display:flex;"><span>            memcpy(newentries, oldentries, numentries * <span style="color:#00f">sizeof</span>(PyDictKeyEntry));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>            PyDictKeyEntry *ep = oldentries;
+</span></span><span style="display:flex;"><span>            <span style="color:#00f">for</span> (Py_ssize_t i = 0; i &lt; numentries; i++) {
+</span></span><span style="display:flex;"><span>                <span style="color:#00f">while</span> (ep-&gt;me_value == NULL)
+</span></span><span style="display:flex;"><span>                    ep++;
+</span></span><span style="display:flex;"><span>                newentries[i] = *ep++;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        assert(oldkeys-&gt;dk_lookup != lookdict_split);
+</span></span><span style="display:flex;"><span>        assert(oldkeys-&gt;dk_refcnt == 1);
+</span></span><span style="display:flex;"><span><span style="color:#00f">#ifdef Py_REF_DEBUG
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>        _Py_RefTotal--;
+</span></span><span style="display:flex;"><span><span style="color:#00f">#endif
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>        <span style="color:#00f">struct</span> _Py_dict_state *state = get_dict_state();
+</span></span><span style="display:flex;"><span><span style="color:#00f">#ifdef Py_DEBUG
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>        <span style="color:#008000">// dictresize() must not be called after _PyDict_Fini()
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span>        assert(state-&gt;keys_numfree != -1);
+</span></span><span style="display:flex;"><span><span style="color:#00f">#endif
+</span></span></span><span style="display:flex;"><span><span style="color:#00f"></span>        <span style="color:#00f">if</span> (oldkeys-&gt;dk_size == PyDict_MINSIZE &amp;&amp;
+</span></span><span style="display:flex;"><span>            state-&gt;keys_numfree &lt; PyDict_MAXFREELIST)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            state-&gt;keys_free_list[state-&gt;keys_numfree++] = oldkeys;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>            PyObject_Free(oldkeys);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    build_indices(mp-&gt;ma_keys, newentries, numentries);
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_keys-&gt;dk_usable -= numentries;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_keys-&gt;dk_nentries = numentries;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">return</span> 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>d = {}
+</span></span><span style="display:flex;"><span>n = 1000000
+</span></span><span style="display:flex;"><span>used = set()
+</span></span><span style="display:flex;"><span><span style="color:#00f">for</span> k <span style="color:#00f">in</span> range(n):
+</span></span><span style="display:flex;"><span>    mem_size = d.__sizeof__()
+</span></span><span style="display:flex;"><span>    d[k] = k
+</span></span><span style="display:flex;"><span>    mem_resize = d.__sizeof__()
+</span></span><span style="display:flex;"><span>    resize_ratio = mem_resize / mem_size
+</span></span><span style="display:flex;"><span>    length = len(d)
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> mem_size <span style="color:#00f">in</span> used <span style="color:#00f">and</span> mem_resize <span style="color:#00f">in</span> used <span style="color:#00f">and</span> k != n - 1:
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">continue</span>
+</span></span><span style="display:flex;"><span>    used.add(mem_size)
+</span></span><span style="display:flex;"><span>    used.add(mem_resize)
+</span></span><span style="display:flex;"><span>    fs = <span style="color:#a31515">f</span><span style="color:#a31515">&#34;length = </span><span style="color:#a31515">{</span>length<span style="color:#a31515">:</span><span style="color:#a31515">-10</span><span style="color:#a31515">}</span><span style="color:#a31515">, mem_size = </span><span style="color:#a31515">{</span>mem_size<span style="color:#a31515">:</span><span style="color:#a31515">-10</span><span style="color:#a31515">}</span><span style="color:#a31515">, mem_resize = </span><span style="color:#a31515">{</span>mem_resize<span style="color:#a31515">:</span><span style="color:#a31515">-10</span><span style="color:#a31515">}</span><span style="color:#a31515">, resize_ratio = </span><span style="color:#a31515">{</span>resize_ratio<span style="color:#a31515">:</span><span style="color:#a31515">-10.5f</span><span style="color:#a31515">}</span><span style="color:#a31515">&#34;</span>
+</span></span><span style="display:flex;"><span>    print(fs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#008000">### Output ###</span>
+</span></span><span style="display:flex;"><span>length =          1, mem_size =         48, mem_resize =        216, resize_ratio =    4.50000
+</span></span><span style="display:flex;"><span>length =          6, mem_size =        216, mem_resize =        344, resize_ratio =    1.59259
+</span></span><span style="display:flex;"><span>length =         11, mem_size =        344, mem_resize =        624, resize_ratio =    1.81395
+</span></span><span style="display:flex;"><span>length =         22, mem_size =        624, mem_resize =       1160, resize_ratio =    1.85897
+</span></span><span style="display:flex;"><span>length =         43, mem_size =       1160, mem_resize =       2256, resize_ratio =    1.94483
+</span></span><span style="display:flex;"><span>length =         86, mem_size =       2256, mem_resize =       4680, resize_ratio =    2.07447
+</span></span><span style="display:flex;"><span>length =        171, mem_size =       4680, mem_resize =       9296, resize_ratio =    1.98632
+</span></span><span style="display:flex;"><span>length =        342, mem_size =       9296, mem_resize =      18504, resize_ratio =    1.99053
+</span></span><span style="display:flex;"><span>length =        683, mem_size =      18504, mem_resize =      36944, resize_ratio =    1.99654
+</span></span><span style="display:flex;"><span>length =       1366, mem_size =      36944, mem_resize =      73800, resize_ratio =    1.99762
+</span></span><span style="display:flex;"><span>length =       2731, mem_size =      73800, mem_resize =     147536, resize_ratio =    1.99913
+</span></span><span style="display:flex;"><span>length =       5462, mem_size =     147536, mem_resize =     294984, resize_ratio =    1.99940
+</span></span><span style="display:flex;"><span>length =      10923, mem_size =     294984, mem_resize =     589904, resize_ratio =    1.99978
+</span></span><span style="display:flex;"><span>length =      21846, mem_size =     589904, mem_resize =    1310792, resize_ratio =    2.22204
+</span></span><span style="display:flex;"><span>length =      43691, mem_size =    1310792, mem_resize =    2621520, resize_ratio =    1.99995
+</span></span><span style="display:flex;"><span>length =      87382, mem_size =    2621520, mem_resize =    5242952, resize_ratio =    1.99997
+</span></span><span style="display:flex;"><span>length =     174763, mem_size =    5242952, mem_resize =   10485840, resize_ratio =    1.99999
+</span></span><span style="display:flex;"><span>length =     349526, mem_size =   10485840, mem_resize =   20971592, resize_ratio =    1.99999
+</span></span><span style="display:flex;"><span>length =     699051, mem_size =   20971592, mem_resize =   41943120, resize_ratio =    2.00000
+</span></span><span style="display:flex;"><span>length =    1000000, mem_size =   41943120, mem_resize =   41943120, resize_ratio =    1.00000
+</span></span></code></pre></div><h3 id="clear">Clear</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#008000">// Objects/dictobject.c
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">// clear dict by creating new one
+</span></span></span><span style="display:flex;"><span><span style="color:#008000">//
+</span></span></span><span style="display:flex;"><span><span style="color:#008000"></span><span style="color:#2b91af">void</span>
+</span></span><span style="display:flex;"><span>PyDict_Clear(PyObject *op)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    PyDictObject *mp;
+</span></span><span style="display:flex;"><span>    PyDictKeysObject *oldkeys;
+</span></span><span style="display:flex;"><span>    PyObject **oldvalues;
+</span></span><span style="display:flex;"><span>    Py_ssize_t i, n;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (!PyDict_Check(op))
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span>;
+</span></span><span style="display:flex;"><span>    mp = ((PyDictObject *)op);
+</span></span><span style="display:flex;"><span>    oldkeys = mp-&gt;ma_keys;
+</span></span><span style="display:flex;"><span>    oldvalues = mp-&gt;ma_values;
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (oldvalues == empty_values)
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">return</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* Empty the dict... */</span>
+</span></span><span style="display:flex;"><span>    dictkeys_incref(Py_EMPTY_KEYS);
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_keys = Py_EMPTY_KEYS;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_values = empty_values;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_used = 0;
+</span></span><span style="display:flex;"><span>    mp-&gt;ma_version_tag = DICT_NEXT_VERSION();
+</span></span><span style="display:flex;"><span>    <span style="color:#008000">/* ...then clear the keys and values */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">if</span> (oldvalues != NULL) {
+</span></span><span style="display:flex;"><span>        n = oldkeys-&gt;dk_nentries;
+</span></span><span style="display:flex;"><span>        <span style="color:#00f">for</span> (i = 0; i &lt; n; i++)
+</span></span><span style="display:flex;"><span>            Py_CLEAR(oldvalues[i]);
+</span></span><span style="display:flex;"><span>        free_values(oldvalues);
+</span></span><span style="display:flex;"><span>        dictkeys_decref(oldkeys);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#00f">else</span> {
+</span></span><span style="display:flex;"><span>       assert(oldkeys-&gt;dk_refcnt == 1);
+</span></span><span style="display:flex;"><span>       dictkeys_decref(oldkeys);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    ASSERT_CONSISTENT(mp);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="real-world-python">Real World Python</h2>
+<p><strong>Notice:</strong></p>
+<ul>
+<li>not thread-safe.</li>
+<li>iterable object that created by dict object can be used after dict size (<strong>len(d)</strong>) changed.</li>
+<li>the only way to decrease dict object size (<strong>sizeof</strong>) is create new one, then copy old into new created.</li>
+<li>when resizing hash table, memory usage will be double.</li>
+</ul>
+<h3 id="bug-code">Bug Code</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>&gt;&gt;&gt; d = {1: 1, 2: 2, 3: 3}
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt; <span style="color:#00f">for</span> k <span style="color:#00f">in</span> d:
+</span></span><span style="display:flex;"><span>...     <span style="color:#00f">del</span> d[k]
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>Traceback (most recent call last):
+</span></span><span style="display:flex;"><span>  File <span style="color:#a31515">&#34;&lt;stdin&gt;&#34;</span>, line 1, <span style="color:#00f">in</span> &lt;module&gt;
+</span></span><span style="display:flex;"><span>RuntimeError: dictionary changed size during iteration
+</span></span><span style="display:flex;"><span>&gt;&gt;&gt;
+</span></span></code></pre></div><h2 id="references">References</h2>
+<ol>
+<li><a href="https://docs.python.org/3.8/library/dis.html">dis - Disassembler for Python bytecode</a></li>
+<li><a href="https://docs.python.org/3/library/sys.html?highlight=getsizeof#sys.getsizeof">python - sys.getsizeof()</a></li>
+<li><a href="https://wiki.python.org/moin/TimeComplexity">python - TimeComplexity</a></li>
+<li><a href="https://wiki.python.org/moin/PythonSpeed/PerformanceTips">python - PerformanceTips</a></li>
+<li><a href="https://godbolt.org/">web - Compiler Explorer</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Hash_table#Collision_resolution">Hash_table - Collision_resolution</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Open_addressing">Hash_table - Open_addressing</a></li>
+</ol>
+
+			</div>
+
+			<div class="tags">
+				
+					
+						<ul class="flat">
+							
+							<li><a href="/tags/python">python</a></li>
+							
+							<li><a href="/tags/python-internal">python-internal</a></li>
+							
+						</ul>
+					
+				
+			</div></div>
+	</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div>2022  © Copyright chaosmatrix |  <a href="https://github.com/knadh/hugo-ink">Ink</a> theme on <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+<script>feather.replace()</script>
+</body>
+</html>
